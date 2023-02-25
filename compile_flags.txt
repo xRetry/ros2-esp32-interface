@@ -1,0 +1,1 @@
+-I/opt/esp/idf/components
