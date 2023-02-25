@@ -1,5 +1,5 @@
-#ifndef HARDWARE_CONTROL_H_   /* Include guard */
-#define HARDWARE_CONTROL_H_   /* Include guard */
+#ifndef HARDWARE_BINDINGS_H_   /* Include guard */
+#define HARDWARE_BINDINGS_H_
 
 #include <pthread.h>
 #include "driver/gpio.h"
@@ -31,6 +31,6 @@ bool set_pin_analog_input(int _pin_nr);
 
 bool set_pin_analog_output(int _pin_nr);
 
-#endif // HARDWARE_CONTROL_H_
+#endif // HARDWARE_BINDINGS_H_
 
 
