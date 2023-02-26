@@ -1,33 +1,21 @@
 #include <executor_handle.h>
-#include <ros2_esp32_interfaces/srv/detail/set_pin__functions.h>
 #include <unistd.h>
 
 #include <rcl/error_handling.h>
 #include <rclc/executor.h>
 #include <rclc/rclc.h>
 
+#include "esp_err.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
 #include <std_msgs/msg/int32.h>
-#include <ros2_esp32_interfaces/msg/pin_values.h>
-#include <ros2_esp32_interfaces/srv/set_pin.h>
 
-#include "hardware_bindings.h"
+#include "board.h"
 
-typedef ros2_esp32_interfaces__msg__PinValues pin_values_t;
 
 //typedef ros2_esp32_interfaces__srv__SetPin_Request set_pin_req_t;
 
-typedef struct set_pin_req_t {
-    int pin_nr;
-    pin_mode_t mode;    
-    pin_type_t type;
-} set_pin_req_t;
-
-typedef struct  set_pin_rsp_t {
-    bool is_ok;
-} set_pin_rsp_t;
 
 rcl_publisher_t publisher;
 pin_values_t recv_msg;
@@ -54,30 +42,15 @@ pin_values_t recv_msg;
 void handle_write_pins(const void *msgin) {
     const pin_values_t *msg = (const pin_values_t*) msgin;
 
-    pthread_rwlock_rdlock(&board.lock);
-    for (int i=0; i<NUM_PINS; i++) {
-        if (board.mode[i] == OUTPUT) {
-            double val = msg->vals[i];
-            esp_err_t err = gpio_set_level(board.pins[i], (uint32_t) val);
-        }
-    }
-    pthread_rwlock_unlock(&board.lock);
+    board_write(&msg->vals);
 }
 
 void handle_read_pins(rcl_timer_t *timer, int64_t last_call_time) {
     (void)last_call_time;
+
     if (timer != NULL) {
-        pthread_rwlock_rdlock(&board.lock);
-
         pin_values_t msg;
-        for (int i=0; i<NUM_PINS; i++) {
-            if (board.mode[i] == INPUT) {
-                int val = gpio_get_level(board.pins[i]);
-                msg.vals[i] = val;
-            }
-        }
-
-        pthread_rwlock_unlock(&board.lock);
+        board_read(&msg.vals);
         RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
     }
 }
@@ -87,53 +60,14 @@ void handle_set_pin(const void *msg_req, void *msg_rsp) {
     set_pin_req_t * request = (set_pin_req_t *) msg_req;
     set_pin_rsp_t * response = (set_pin_rsp_t *) msg_rsp;
 
-    // Handle wrong pin_nr
-    // TODO: Use built-in macros
-    if (request->pin_nr < 0 && request->pin_nr >= NUM_PINS) {
-        response->is_ok = false;
-        return;
-    }
+    esp_err_t err = board_set_pin(request);
 
-    // Change pin
-    pthread_rwlock_wrlock(&board.lock);
-
-    bool is_ok = false;
-    switch (request->mode) {
-    case DISABLED: 
-        is_ok = set_pin_disabled(request->pin_nr);
-        break;
-    case INPUT:
-        switch (request->type) {
-        case DIGITAL:
-            is_ok = set_pin_digital_input(request->pin_nr);
-            break;
-        case ANALOG:
-            is_ok = set_pin_analog_input(request->pin_nr);
-            break;
-        }
-        break;
-    case OUTPUT:
-        switch (request->type) {
-        case DIGITAL:
-            is_ok = set_pin_digital_output(request->pin_nr);
-            break;
-        case ANALOG:
-            is_ok = set_pin_analog_output(request->pin_nr);
-            break;
-        }
-        break;
-    }
-
-    if (is_ok) {
-        board.mode[request->pin_nr] = request->mode;
-        board.type[request->pin_nr] = request->type;
-    }
-    pthread_rwlock_unlock(&board.lock);
-
-    response->is_ok = is_ok;
+    response->is_ok = err == ESP_OK;
 }
 
 void init_node(void *arg) {
+    esp_err_t err = board_init();
+
     rcl_allocator_t allocator = rcl_get_default_allocator();
 
     // Create init_options.
