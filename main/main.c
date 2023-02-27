@@ -9,12 +9,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include <std_msgs/msg/int32.h>
-
 #include "board.h"
 
 
-//typedef ros2_esp32_interfaces__srv__SetPin_Request set_pin_req_t;
 
 
 rcl_publisher_t publisher;

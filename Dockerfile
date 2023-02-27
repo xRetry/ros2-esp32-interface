@@ -38,11 +38,8 @@ RUN nvim --headless +'TSInstall c cpp' +'MasonInstall clangd' +'sleep 10' +qall
 RUN mkdir -p /ws
 
 # Project specific installs
-#RUN apt-get -y install cmake
-#
-#RUN . ${IDF_PATH}/export.sh
-#RUN pip3 install catkin_pkg lark-parser empy colcon-common-extensions
 RUN git clone https://github.com/micro-ROS/micro_ros_espidf_component.git /opt/esp/idf/components/micro_ros_espidf_component
+RUN git clone https://github.com/xRetry/ros2-esp32-interfaces.git /opt/esp/idf/components/micro_ros_espidf_component/extra_packages/ros2-esp32-interfaces
 
 # Set default location after container startup.
 WORKDIR /ws

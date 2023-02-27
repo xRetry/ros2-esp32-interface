@@ -2,7 +2,7 @@
 #include "esp_err.h"
 
 typedef struct board_t {
-    pin_mode_t mode[NUM_PINS];
+    pin_mode_t direction[NUM_PINS];
     pin_type_t type[NUM_PINS];
     esp_err_t (*io_functions[NUM_PINS])(uint8_t, double*);
     pthread_rwlock_t lock;
@@ -14,7 +14,7 @@ esp_err_t board_init() {
     for (int pin_nr=0; pin_nr<NUM_PINS; pin_nr++) {
         esp_err_t err = gpio_reset_pin(pin_nr);
         if (err != ESP_OK) return err;
-        board.mode[pin_nr] = DISABLED;
+        board.direction[pin_nr] = DISABLED;
         board.type[pin_nr] = DIGITAL;
     }
 
@@ -27,7 +27,7 @@ esp_err_t call_io_functions(double (*vals)[NUM_PINS], pin_mode_t mode) {
 
     for (int pin_nr=0; pin_nr<NUM_PINS; pin_nr++) {
         esp_err_t err = ESP_FAIL;
-        if (board.mode[pin_nr] == mode) {
+        if (board.direction[pin_nr] == mode) {
             err = (*board.io_functions[pin_nr])(
                 pin_nr, 
                 vals[pin_nr]
@@ -91,40 +91,40 @@ esp_err_t set_pin_analog_output(uint8_t _pin_nr) {
 // --- Set pin --- //
 
 esp_err_t board_set_pin(set_pin_req_t *request) {
-    uint8_t pin_nr = request->pin_nr;
+    pin_config_t *cfg = &request->new_config;
 
     pthread_rwlock_wrlock(&board.lock);
 
     esp_err_t err = ESP_FAIL;
-    switch (request->mode) {
-    case DISABLED: 
-        err = set_pin_disabled(pin_nr);
+    switch (request->new_config.direction) {
+        case DISABLED:
+        err = set_pin_disabled(cfg->pin_nr);
         break;
     case INPUT:
-        switch (request->type) {
+        switch (cfg->type) {
         case DIGITAL:
-            err = set_pin_digital_input(pin_nr);
+            err = set_pin_digital_input(cfg->pin_nr);
             break;
         case ANALOG:
-            err = set_pin_analog_input(pin_nr);
+            err = set_pin_analog_input(cfg->pin_nr);
             break;
         }
         break;
     case OUTPUT:
-        switch (request->type) {
+        switch (cfg->type) {
         case DIGITAL:
-            err = set_pin_digital_output(pin_nr);
+            err = set_pin_digital_output(cfg->pin_nr);
             break;
         case ANALOG:
-            err = set_pin_analog_output(pin_nr);
+            err = set_pin_analog_output(cfg->pin_nr);
             break;
         }
         break;
     }
 
     if (err == ESP_OK) {
-        board.mode[request->pin_nr] = request->mode;
-        board.type[request->pin_nr] = request->type;
+        board.direction[cfg->pin_nr] = cfg->direction;
+        board.type[cfg->pin_nr] = cfg->type;
     }
 
     pthread_rwlock_unlock(&board.lock);
