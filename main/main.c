@@ -11,6 +11,7 @@
 
 #include "board.h"
 
+#include <uros_network_interfaces.h>
 #ifdef CONFIG_MICRO_ROS_ESP_XRCE_DDS_MIDDLEWARE
 #include <rmw_microros/rmw_microros.h>
 #endif
@@ -67,13 +68,12 @@ void init_node(void *arg) {
     printf("Enter init_node\n");
     esp_err_t err = board_init();
 
-    printf("alloc\n");
     rcl_allocator_t allocator = rcl_get_default_allocator();
 
-    printf("init_options\n");
     // Create init_options.
     rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
     RCCHECK(rcl_init_options_init(&init_options, allocator));
+    RCCHECK(rcl_init_options_set_domain_id(&init_options, 10));
 
 #ifdef CONFIG_MICRO_ROS_ESP_XRCE_DDS_MIDDLEWARE
     printf("rmw\n");
@@ -86,7 +86,6 @@ void init_node(void *arg) {
 
     // --- Create support ---
     printf("support\n");
-
    
     rclc_support_t support;
     RCCHECK(rclc_support_init_with_options(
@@ -190,6 +189,12 @@ void init_node(void *arg) {
 
 void app_main(void) {
     printf("Enter app_main\n");
+
+#if defined(CONFIG_MICRO_ROS_ESP_NETIF_WLAN) || defined(CONFIG_MICRO_ROS_ESP_NETIF_ENET)
+    printf("init network");
+    ESP_ERROR_CHECK(uros_network_interface_initialize());
+#endif
+
     xTaskCreate(init_node, "uros_task", CONFIG_MICRO_ROS_APP_STACK, NULL,
         CONFIG_MICRO_ROS_APP_TASK_PRIO, NULL);
 }

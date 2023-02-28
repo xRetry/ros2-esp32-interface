@@ -18,10 +18,8 @@ esp_err_t board_init() {
         //if (err != ESP_OK) return err;
         board.direction[pin_nr] = DISABLED;
         board.type[pin_nr] = DIGITAL;
-        printf("loop %d\n", pin_nr);
     }
 
-    printf("lock\n");
     board.lock = PTHREAD_RWLOCK_INITIALIZER;
     return ESP_OK;
 }
