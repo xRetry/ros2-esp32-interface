@@ -11,13 +11,17 @@ typedef struct board_t {
 board_t board;
 
 esp_err_t board_init() {
+    printf("board_init\n");
     for (int pin_nr=0; pin_nr<NUM_PINS; pin_nr++) {
-        esp_err_t err = gpio_reset_pin(pin_nr);
-        if (err != ESP_OK) return err;
+        //if (pin_nr == 7) continue;
+        //esp_err_t err = gpio_set_direction(pin_nr, GPIO_MODE_DISABLE);
+        //if (err != ESP_OK) return err;
         board.direction[pin_nr] = DISABLED;
         board.type[pin_nr] = DIGITAL;
+        printf("loop %d\n", pin_nr);
     }
 
+    printf("lock\n");
     board.lock = PTHREAD_RWLOCK_INITIALIZER;
     return ESP_OK;
 }

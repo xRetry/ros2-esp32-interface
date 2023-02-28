@@ -11,8 +11,9 @@
 
 #include "board.h"
 
-
-
+#ifdef CONFIG_MICRO_ROS_ESP_XRCE_DDS_MIDDLEWARE
+#include <rmw_microros/rmw_microros.h>
+#endif
 
 rcl_publisher_t publisher;
 pin_values_t recv_msg;
@@ -63,15 +64,29 @@ void handle_set_pin(const void *msg_req, void *msg_rsp) {
 }
 
 void init_node(void *arg) {
+    printf("Enter init_node\n");
     esp_err_t err = board_init();
 
+    printf("alloc\n");
     rcl_allocator_t allocator = rcl_get_default_allocator();
 
+    printf("init_options\n");
     // Create init_options.
     rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
     RCCHECK(rcl_init_options_init(&init_options, allocator));
 
+#ifdef CONFIG_MICRO_ROS_ESP_XRCE_DDS_MIDDLEWARE
+    printf("rmw\n");
+	rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(&init_options);
+
+	// Static Agent IP and port can be used instead of autodisvery.
+	RCCHECK(rmw_uros_options_set_udp_address(CONFIG_MICRO_ROS_AGENT_IP, CONFIG_MICRO_ROS_AGENT_PORT, rmw_options));
+	//RCCHECK(rmw_uros_discover_agent(rmw_options));
+#endif
+
     // --- Create support ---
+    printf("support\n");
+
    
     rclc_support_t support;
     RCCHECK(rclc_support_init_with_options(
@@ -88,6 +103,7 @@ void init_node(void *arg) {
     RCCHECK(rclc_node_init_default(&node, "esp32_interface", "", &support));
 
     // --- Create executor ---
+    printf("executor\n");
 
     rclc_executor_t executor = rclc_executor_get_zero_initialized_executor();
     RCCHECK(rclc_executor_init(&executor, &support.context, 2, &allocator));
@@ -99,7 +115,7 @@ void init_node(void *arg) {
     RCCHECK(rclc_publisher_init_default(
         &publisher, 
         &node, 
-        ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
+        ROSIDL_GET_MSG_TYPE_SUPPORT(ros2_esp32_interfaces, msg, PinValues),
         "esp32_read_pins"
     ));
 
@@ -110,7 +126,7 @@ void init_node(void *arg) {
     RCCHECK(rclc_subscription_init_default(
         &subscriber, 
         &node, 
-        ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
+        ROSIDL_GET_MSG_TYPE_SUPPORT(ros2_esp32_interfaces, msg, PinValues),
         "esp32_write_pins"
     ));
 
@@ -155,8 +171,9 @@ void init_node(void *arg) {
 
     // --- Run endless loop ---
 
+    printf("Enter init_node endless loop\n");
     while (1) {
-        rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
+        rclc_executor_spin_some(&executor, RCL_MS_TO_NS(10000));
         usleep(100000);
     }
 
@@ -172,6 +189,7 @@ void init_node(void *arg) {
 }
 
 void app_main(void) {
+    printf("Enter app_main\n");
     xTaskCreate(init_node, "uros_task", CONFIG_MICRO_ROS_APP_STACK, NULL,
         CONFIG_MICRO_ROS_APP_TASK_PRIO, NULL);
 }
