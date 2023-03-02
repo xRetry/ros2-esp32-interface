@@ -9,6 +9,7 @@
 #include <ros2_esp32_interfaces/msg/pin_config.h>
 #include <ros2_esp32_interfaces/srv/set_pin.h>
 #include <ros2_esp32_interfaces/srv/detail/set_pin__functions.h>
+#include "esp_err.h"
 
 #define NUM_PINS 10
 

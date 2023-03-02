@@ -1,5 +1,4 @@
 #include "board.h"
-#include "esp_err.h"
 
 typedef struct board_t {
     pin_mode_t direction[NUM_PINS];
