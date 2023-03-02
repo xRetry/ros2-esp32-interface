@@ -1,11 +1,9 @@
 #include "unity.h"
-
-#define CONFIG_MBEDTLS_HAVE_TIME 1
-#define MBEDTLS_HAVE_TIME 1
-
 #include "board.h"
-#include "driver/mock_gpio.h"
+//#include "driver/mock_gpio.h"
+#include "mock_gpio.h"
 
+//TEST_FILE("driver/gpio.h");
 
 void setUp(void) {
 

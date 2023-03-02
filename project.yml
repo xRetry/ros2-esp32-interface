@@ -39,13 +39,19 @@
     - test/support
   :libraries: []
   :include:
-    #    - /opt/esp/idf/components/driver/include/**
-    - /opt/esp/idf/components/**
+     - /opt/esp/idf/components/micro_ros_espidf_component/include/ros2_esp32_interfaces/**
+     - /opt/esp/idf/components/micro_ros_espidf_component/include/rosidl_runtime_c/**
+     - /opt/esp/idf/components/micro_ros_espidf_component/include/rosidl_typesupport_interface/**
+     - /opt/esp/idf/components/esp_common/include/**
+     - /opt/esp/idf/components/esp_hw_support/include/**
+     - /opt/esp/idf/components/esp_rom/include/**
+     - /opt/esp/idf/components/hal/include/**
+     - /opt/esp/idf/components/soc/esp32/include/**
 
 :files:
   :include:
     #- /opt/esp/idf/tools/mocks/**
-    - /opt/esp/idf/components/drivers/include/drivers/gpio.h
+    #- /opt/esp/idf/components/drivers/include/drivers/gpio.h
 
 :defines:
   # in order to add common defines:
