@@ -8,6 +8,7 @@ typedef struct board_t {
 } board_t;
 
 board_t board;
+pthread_rwlock_t _lock = PTHREAD_RWLOCK_INITIALIZER;
 
 esp_err_t board_init() {
     printf("board_init\n");
@@ -19,7 +20,7 @@ esp_err_t board_init() {
         board.type[pin_nr] = DIGITAL;
     }
 
-    board.lock = PTHREAD_RWLOCK_INITIALIZER;
+    board.lock = _lock;
     return ESP_OK;
 }
 

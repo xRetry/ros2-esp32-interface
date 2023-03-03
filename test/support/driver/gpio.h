@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#pragma once
+//#pragma once
+#define  CONFIG_IDF_TARGET_ESP32 1
 
 #include <stdbool.h>
 #include "sdkconfig.h"
@@ -14,9 +15,9 @@
 #include "hal/gpio_types.h"
 #include "esp_rom_gpio.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+//#ifdef __cplusplus
+//extern "C" {
+//#endif
 
 #define GPIO_PIN_COUNT                      (SOC_GPIO_PIN_COUNT)
 /// Check whether it is a valid GPIO number
@@ -29,7 +30,7 @@ extern "C" {
 #define GPIO_IS_VALID_DIGITAL_IO_PAD(gpio_num) ((gpio_num >= 0) && \
                                                  (((1ULL << (gpio_num)) & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK) != 0))
 
-//typedef intr_handle_t gpio_isr_handle_t;
+typedef intr_handle_t gpio_isr_handle_t;
 
 /**
  * @brief GPIO interrupt handler
@@ -432,7 +433,7 @@ void gpio_iomux_in(uint32_t gpio_num, uint32_t signal_idx);
   */
 void gpio_iomux_out(uint8_t gpio_num, int func, bool oen_inv);
 
-#if SOC_GPIO_SUPPORT_FORCE_HOLD
+//#if SOC_GPIO_SUPPORT_FORCE_HOLD
 /**
   * @brief Force hold digital and rtc gpio pad.
   * @note GPIO force hold, whether the chip in sleep mode or wakeup mode.
@@ -444,9 +445,9 @@ esp_err_t gpio_force_hold_all(void);
   * @note GPIO force unhold, whether the chip in sleep mode or wakeup mode.
   * */
 esp_err_t gpio_force_unhold_all(void);
-#endif
+//#endif
 
-#if SOC_GPIO_SUPPORT_SLP_SWITCH
+//#if SOC_GPIO_SUPPORT_SLP_SWITCH
 /**
   * @brief Enable SLP_SEL to change GPIO status automantically in lightsleep.
   * @param gpio_num GPIO number of the pad.
@@ -493,9 +494,9 @@ esp_err_t gpio_sleep_set_direction(gpio_num_t gpio_num, gpio_mode_t mode);
  *     - ESP_ERR_INVALID_ARG : Parameter error
  */
 esp_err_t gpio_sleep_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull);
-#endif
+//#endif
 
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+//#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 
 #define GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(gpio_num)    ((gpio_num >= 0) && \
                                                           (((1ULL << (gpio_num)) & SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK) != 0))
@@ -526,8 +527,8 @@ esp_err_t gpio_deep_sleep_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t int
  */
 esp_err_t gpio_deep_sleep_wakeup_disable(gpio_num_t gpio_num);
 
-#endif
+//#endif
 
-#ifdef __cplusplus
-}
-#endif
+//#ifdef __cplusplus
+//}
+//#endif
