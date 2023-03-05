@@ -1,8 +1,12 @@
 #include "board.h"
+#include "driver/gpio.h"
+#include "esp_adc/adc_oneshot.h"
+#include "esp_err.h"
 
 typedef struct board_t {
     pin_mode_t direction[NUM_PINS];
     pin_type_t type[NUM_PINS];
+    adc_oneshot_unit_handle_t adc_handles[NUM_PINS];
     esp_err_t (*io_functions[NUM_PINS])(uint8_t, double*);
     pthread_rwlock_t lock;
 } board_t;
@@ -13,9 +17,6 @@ pthread_rwlock_t _lock = PTHREAD_RWLOCK_INITIALIZER;
 esp_err_t board_init() {
     printf("board_init\n");
     for (int pin_nr=0; pin_nr<NUM_PINS; pin_nr++) {
-        //if (pin_nr == 7) continue;
-        //esp_err_t err = gpio_set_direction(pin_nr, GPIO_MODE_DISABLE);
-        //if (err != ESP_OK) return err;
         board.direction[pin_nr] = DISABLED;
         board.type[pin_nr] = DIGITAL;
     }
@@ -32,11 +33,11 @@ esp_err_t call_io_functions(double (*vals)[NUM_PINS], pin_mode_t mode) {
         if (board.direction[pin_nr] == mode) {
             err = (*board.io_functions[pin_nr])(
                 pin_nr, 
-                vals[pin_nr]
+                &(*vals)[pin_nr]
             );
         }
         if (err != ESP_OK) {
-            *vals[pin_nr] = 0.;
+            (*vals)[pin_nr] = 0.;
         }
     }
 
@@ -67,23 +68,91 @@ esp_err_t read_pin_digital(uint8_t pin_nr, double *val) {
 }
 
 esp_err_t write_pin_digital(uint8_t pin_nr, double *val) {
+    printf("enter write_pin_digital: %f\n", *val);
     return gpio_set_level(pin_nr, *val);
 }
 
 esp_err_t  set_pin_digital_input(uint8_t pin_nr) {
     board.io_functions[pin_nr] = &read_pin_digital;
-    return gpio_set_direction(pin_nr, GPIO_MODE_INPUT);
+    gpio_config_t io_conf;
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    io_conf.mode = GPIO_MODE_INPUT;
+    io_conf.pin_bit_mask = (1ULL << pin_nr);
+    io_conf.pull_down_en = 0;
+    io_conf.pull_up_en = 0;
+    return gpio_config(&io_conf);
 }
 
 esp_err_t set_pin_digital_output(uint8_t pin_nr) {
     board.io_functions[pin_nr] = &write_pin_digital;
-    return gpio_set_direction(pin_nr, GPIO_MODE_OUTPUT);
+    gpio_config_t io_conf;
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    io_conf.pin_bit_mask = (1ULL << pin_nr);
+    io_conf.pull_down_en = 0;
+    io_conf.pull_up_en = 0;
+    return gpio_config(&io_conf);
 }
 
 // --- Analog --- //
 
-esp_err_t  set_pin_analog_input(uint8_t _pin_nr) {
-    return ESP_FAIL;
+esp_err_t read_pin_analog(uint8_t pin_nr, double *val) {
+    adc_unit_t unit_id; 
+    adc_channel_t channel;
+    esp_err_t err = adc_oneshot_io_to_channel(
+        pin_nr, 
+        &unit_id, 
+        &channel
+    );
+    if (err != ESP_OK) return err;
+
+    err = adc_oneshot_read(
+        board.adc_handles[pin_nr], 
+        channel, 
+        val
+    );
+    if (err != ESP_OK) return err;
+
+    return ESP_OK;
+}
+
+esp_err_t  set_pin_analog_input(uint8_t pin_nr) {
+    board.io_functions[pin_nr] = &read_pin_analog;
+    adc_unit_t unit_id; 
+    adc_channel_t channel;
+    esp_err_t err = adc_oneshot_io_to_channel(
+        pin_nr, 
+        &unit_id, 
+        &channel
+    );
+    if (err != ESP_OK) return err;
+
+    // --- Init ADC unit --- //
+    adc_oneshot_unit_handle_t unit_handle;
+    adc_oneshot_unit_init_cfg_t unit_config = {
+        .unit_id = unit_id,
+        .ulp_mode = ADC_ULP_MODE_DISABLE,
+    };
+    err = adc_oneshot_new_unit(&unit_config, &unit_handle);
+    if (err != ESP_OK) return err;
+
+    // --- Init ADC channel --- //
+    adc_oneshot_chan_cfg_t channel_config = {
+        .bitwidth = ADC_BITWIDTH_DEFAULT,
+        .atten = ADC_ATTEN_DB_11,
+    };
+    err = adc_oneshot_config_channel(
+        unit_handle, 
+        channel, 
+        &channel_config
+    );
+    if (err != ESP_OK) return err;
+
+    board.adc_handles[pin_nr] = unit_handle;
+
+    // TODO: Calibration
+    
+    return ESP_OK;
 }
 
 esp_err_t set_pin_analog_output(uint8_t _pin_nr) {

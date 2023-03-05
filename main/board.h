@@ -11,7 +11,7 @@
 #include <ros2_esp32_interfaces/srv/detail/set_pin__functions.h>
 #include "esp_err.h"
 
-#define NUM_PINS 10
+#define NUM_PINS 35
 
 typedef ros2_esp32_interfaces__srv__SetPin_Request set_pin_req_t;
 typedef ros2_esp32_interfaces__msg__PinValues pin_values_t;

@@ -7,6 +7,7 @@
 
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/portmacro.h"
 #include "freertos/task.h"
 
 #include "board.h"
@@ -187,14 +188,51 @@ void init_node(void *arg) {
 
 }
 
+void test_board() {
+    board_init();
+
+    set_pin_req_t req;
+    req.new_config.type = DIGITAL;
+    req.new_config.pin_nr = 13;
+    req.new_config.direction = OUTPUT;
+    board_set_pin(&req);
+
+    req.new_config.type = DIGITAL;
+    req.new_config.pin_nr = 14;
+    req.new_config.direction = INPUT;
+    board_set_pin(&req);
+
+    req.new_config.type = ANALOG;
+    req.new_config.pin_nr = 26;
+    req.new_config.direction = INPUT;
+    board_set_pin(&req);
+
+    double vals[35];
+    double vals_out[35];
+    while (1) {
+        vals[13] = 1.;
+        board_write(&vals);
+        board_read(&vals_out);
+        printf("read: %f\n", vals_out[14]);
+        printf("read2: %f\n", vals_out[26]);
+        vTaskDelay(1000/ portTICK_PERIOD_MS);
+
+        vals[13] = 0.;
+        board_write(&vals);
+        board_read(&vals_out);
+        printf("read: %f\n", vals_out[14]);
+        printf("read2: %f\n", vals_out[26]);
+        vTaskDelay(1000/ portTICK_PERIOD_MS);
+    }
+}
+
 void app_main(void) {
-    printf("Enter app_main\n");
-
-#if defined(CONFIG_MICRO_ROS_ESP_NETIF_WLAN) || defined(CONFIG_MICRO_ROS_ESP_NETIF_ENET)
-    printf("init network");
-    ESP_ERROR_CHECK(uros_network_interface_initialize());
-#endif
-
-    xTaskCreate(init_node, "uros_task", CONFIG_MICRO_ROS_APP_STACK, NULL,
-        CONFIG_MICRO_ROS_APP_TASK_PRIO, NULL);
+//#if defined(CONFIG_MICRO_ROS_ESP_NETIF_WLAN) || defined(CONFIG_MICRO_ROS_ESP_NETIF_ENET)
+//    printf("init network");
+//    ESP_ERROR_CHECK(uros_network_interface_initialize());
+//#endif
+//
+//    xTaskCreate(init_node, "uros_task", CONFIG_MICRO_ROS_APP_STACK, NULL,
+//        CONFIG_MICRO_ROS_APP_TASK_PRIO, NULL);
+    test_board();
 }
