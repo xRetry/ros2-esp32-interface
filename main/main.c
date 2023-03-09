@@ -13,9 +13,7 @@
 #include "board.h"
 
 #include <uros_network_interfaces.h>
-#ifdef CONFIG_MICRO_ROS_ESP_XRCE_DDS_MIDDLEWARE
 #include <rmw_microros/rmw_microros.h>
-#endif
 
 rcl_publisher_t publisher;
 pin_values_t recv_msg;
@@ -65,37 +63,51 @@ void handle_set_pin(const void *msg_req, void *msg_rsp) {
     response->is_ok = err == ESP_OK;
 }
 
+void connect_to_agent(rcl_init_options_t *init_options, rclc_support_t *support, rcl_allocator_t *allocator) {
+    printf("connect_to_agent\n");
+
+    bool try_udp = true;
+    esp_err_t err = ESP_FAIL;
+    while (err != ESP_OK) {
+        rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(init_options);
+
+        if (try_udp) {
+            printf("udp\n");
+            RCCHECK(rmw_uros_options_set_udp_address(
+                CONFIG_MICRO_ROS_AGENT_IP, 
+                CONFIG_MICRO_ROS_AGENT_PORT, 
+                rmw_options
+            ));
+        } else {
+            printf("serial\n");
+            RCCHECK(rmw_uros_options_set_serial_device("/dev/ttyUSB0", rmw_options));
+        }
+
+        printf("support\n");
+       
+        err = rclc_support_init_with_options(
+            support, 
+            0, 
+            NULL, 
+            init_options,
+            allocator
+        );
+        
+        try_udp = !try_udp;
+    }
+}
+
 void init_node(void *arg) {
     printf("Enter init_node\n");
-    esp_err_t err = board_init();
+    RCCHECK(board_init());
 
     rcl_allocator_t allocator = rcl_get_default_allocator();
-
-    // Create init_options.
     rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
+    rclc_support_t support;
+
     RCCHECK(rcl_init_options_init(&init_options, allocator));
     RCCHECK(rcl_init_options_set_domain_id(&init_options, 10));
-
-#ifdef CONFIG_MICRO_ROS_ESP_XRCE_DDS_MIDDLEWARE
-    printf("rmw\n");
-	rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(&init_options);
-
-	// Static Agent IP and port can be used instead of autodisvery.
-	RCCHECK(rmw_uros_options_set_udp_address(CONFIG_MICRO_ROS_AGENT_IP, CONFIG_MICRO_ROS_AGENT_PORT, rmw_options));
-	//RCCHECK(rmw_uros_discover_agent(rmw_options));
-#endif
-
-    // --- Create support ---
-    printf("support\n");
-   
-    rclc_support_t support;
-    RCCHECK(rclc_support_init_with_options(
-        &support, 
-        0, 
-        NULL, 
-        &init_options,
-        &allocator
-    ));
+    connect_to_agent(&init_options, &support, &allocator);
 
     // --- Create node ---
 
@@ -192,19 +204,16 @@ void test_board() {
     board_init();
 
     set_pin_req_t req;
-    req.new_config.type = DIGITAL;
+    req.new_config.pin_mode = MODE_DIGITAL_OUTPUT;
     req.new_config.pin_nr = 13;
-    req.new_config.direction = OUTPUT;
     board_set_pin(&req);
 
-    req.new_config.type = DIGITAL;
+    req.new_config.pin_mode = MODE_DIGITAL_INPUT;
     req.new_config.pin_nr = 14;
-    req.new_config.direction = INPUT;
     board_set_pin(&req);
 
-    req.new_config.type = ANALOG;
+    req.new_config.pin_mode = MODE_ANALOG_INPUT;
     req.new_config.pin_nr = 26;
-    req.new_config.direction = INPUT;
     board_set_pin(&req);
 
     double vals[35];
@@ -227,12 +236,12 @@ void test_board() {
 }
 
 void app_main(void) {
-//#if defined(CONFIG_MICRO_ROS_ESP_NETIF_WLAN) || defined(CONFIG_MICRO_ROS_ESP_NETIF_ENET)
-//    printf("init network");
-//    ESP_ERROR_CHECK(uros_network_interface_initialize());
-//#endif
-//
-//    xTaskCreate(init_node, "uros_task", CONFIG_MICRO_ROS_APP_STACK, NULL,
-//        CONFIG_MICRO_ROS_APP_TASK_PRIO, NULL);
-    test_board();
+#if defined(CONFIG_MICRO_ROS_ESP_NETIF_WLAN) || defined(CONFIG_MICRO_ROS_ESP_NETIF_ENET)
+    printf("init network");
+    ESP_ERROR_CHECK(uros_network_interface_initialize());
+#endif
+
+    xTaskCreate(init_node, "uros_task", CONFIG_MICRO_ROS_APP_STACK, NULL,
+        CONFIG_MICRO_ROS_APP_TASK_PRIO, NULL);
+    //test_board();
 }
