@@ -1,5 +1,6 @@
 #include "modes.h"
 
+
 // --- Disable --- //
 
 esp_err_t  set_pin_disabled(uint8_t pin_nr) {
@@ -107,3 +108,23 @@ esp_err_t set_pin_analog_input(uint8_t pin_nr) {
     
     return ESP_OK;
 }
+
+///
+
+esp_err_t (*const PIN_MODE_FUNCTIONS[5])(uint8_t) = {
+    &set_pin_disabled,
+    &set_pin_digital_input,
+    &set_pin_digital_output,
+    &set_pin_analog_input,
+    &set_pin_analog_output,
+};
+
+const pin_mode_directions_t PIN_DIRECTIONS[5] = {
+    DISABLED,
+    INPUT,
+    OUTPUT,
+    INPUT,
+    OUTPUT,
+};
+
+

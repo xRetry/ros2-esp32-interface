@@ -2,11 +2,8 @@
 #define BOARD_H_
 
 #include <pthread.h>
+#include "esp_err.h"
 #include "modes.h"
-
-typedef struct  set_pin_rsp_t {
-    bool is_ok;
-} set_pin_rsp_t;
 
 esp_err_t board_init();
 

@@ -1,23 +1,8 @@
 #include "board.h"
 
+const pin_mode_directions_t PIN_DIRECTIONS[5];
+
 board_t board;
-
-esp_err_t (*const PIN_MODE_FUNCTIONS[5])(uint8_t) = {
-    &set_pin_disabled,
-    &set_pin_digital_input,
-    &set_pin_digital_output,
-    &set_pin_analog_input,
-    &set_pin_analog_output,
-};
-
-const pin_mode_directions_t PIN_DIRECTIONS[5] = {
-    DISABLED,
-    INPUT,
-    OUTPUT,
-    INPUT,
-    OUTPUT,
-};
-
 pthread_rwlock_t _lock = PTHREAD_RWLOCK_INITIALIZER;
 
 esp_err_t board_init() {
@@ -59,8 +44,6 @@ esp_err_t board_read(double (*vals_out)[NUM_PINS]) {
 esp_err_t board_write(double (*vals_in)[NUM_PINS]) {
     return call_pin_functions(vals_in, OUTPUT);
 }
-
-// --- Set pin --- //
 
 esp_err_t board_set_pin(set_pin_req_t *request) {
     pin_config_t *cfg = &request->new_config;
