@@ -39,8 +39,8 @@ pin_values_t recv_msg;
     }                                                                          \
   }
 
-#define RMW_UXRCE_TRANSPORT_SERIAL 1
-#define RMW_UXRCE_TRANSPORT_UDP 1
+//#define RMW_UXRCE_TRANSPORT_SERIAL 1
+//#define RMW_UXRCE_TRANSPORT_UDP 1
 
 void handle_write_pins(const void *msgin) {
     const pin_values_t *msg = (const pin_values_t*) msgin;
@@ -66,54 +66,6 @@ void handle_set_pin(const void *msg_req, void *msg_rsp) {
     esp_err_t err = board_set_pin(request);
 
     response->is_ok = err == ESP_OK;
-}
-
-void connect_to_agent(rcl_init_options_t *init_options, rclc_support_t *support, rcl_allocator_t *allocator) {
-    printf("connect_to_agent\n");
-
-    bool try_udp = true;
-    esp_err_t err = ESP_FAIL;
-    while (err != ESP_OK) {
-        rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(init_options);
-
-        if (try_udp) {
-            printf("udp\n");
-            RCCHECK(rmw_uros_options_set_udp_address(
-                "10.0.0.39",
-                "8888", 
-                rmw_options
-            ));
-        } else {
-            rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(init_options);
-
-            printf("serial\n");
-            printf("%d\n", NULL == rmw_options);
-            #if defined (RMW_UXRCE_TRANSPORT_SERIAL)
-            printf("serial defined\n");
-            #else
-            printf("serial not defined\n");
-            #endif
-            const char *dev = "/dev/ttyUSB0";
-            printf("%d\n", dev != NULL && strlen(dev) <= MAX_SERIAL_DEVICE);
-            //RCCHECK(rmw_uros_options_set_serial_device(dev, rmw_options));
-            //printf("", ,rmw_options->impl->transport_params.serial_device);
-            printf("%d", rmw_options->impl == NULL);
-            //snprintf(rmw_options->impl->transport_params.serial_device, MAX_SERIAL_DEVICE, "%s", dev);
-            RCCHECK(rmw_uros_options_set_serial_device(dev, rmw_options));
-        }
-
-        printf("support\n");
-       
-        err = rclc_support_init_with_options(
-            support, 
-            0, 
-            NULL, 
-            init_options,
-            allocator
-        );
-        
-        try_udp = !try_udp;
-    }
 }
 
 esp_err_t connect(rcl_allocator_t *allocator, bool wifi) {
@@ -159,18 +111,26 @@ void init_node(void *arg) {
     printf("Enter init_node\n");
     RCCHECK(board_init());
 
-    //rcl_allocator_t allocator;
-    //rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
-    rclc_support_t support;
-    //RCCHECK(rclc_support_init(&support, 0, NULL, &allocator));
-    //RCCHECK(rcl_init_options_init(&init_options, allocator));
-    //RCCHECK(rcl_init_options_set_domain_id(&init_options, 10));
-    //printf("%d\n", init_options.impl->rmw_init_options == NULL);
-    //printf("%d\n", init_options.impl->allocator == NULL);
-    //connect_to_agent(&init_options, &support, &allocator);
-    
-    rcl_allocator_t allocator = rcl_get_default_allocator();
-    RCCHECK(rclc_support_init(&support, 0, NULL, &allocator))
+	rcl_allocator_t allocator = rcl_get_default_allocator();
+	rclc_support_t support;
+
+	rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
+	RCCHECK(rcl_init_options_init(&init_options, allocator));
+
+#ifdef CONFIG_MICRO_ROS_ESP_XRCE_DDS_MIDDLEWARE
+	rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(&init_options);
+
+	// Static Agent IP and port can be used instead of autodisvery.
+	RCCHECK(rmw_uros_options_set_udp_address(CONFIG_MICRO_ROS_AGENT_IP, CONFIG_MICRO_ROS_AGENT_PORT, rmw_options));
+	//RCCHECK(rmw_uros_discover_agent(rmw_options));
+#endif
+
+	// create init_options
+	RCCHECK(rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator));
+
+
+	// create init_options
+	//RCCHECK(rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator));
     
     //esp_err_t err = ESP_FAIL;
     //bool try_wifi = true;
