@@ -18,3 +18,28 @@ The program consists of two layers, one for running the ROS2 node and one for ma
 The ROS node is containing a publisher and subscriber for reading and writing to the pins of the microcrontroller, as well as a service for runtime configuration changes.
 
 The board layer is managing the access and state of the hardware components and exposes functions to read/write the values from the pins and change the board configuration.
+
+## Adding new read/write modes
+
+So far, the program contains modes for reading and writing digital and analog signals.
+The functionality can be easily expanded thrugh the following steps:
+
+1. Provide a new function inside the `modes.c` file, which writes or reads the values of a specific pin. 
+It is called at the refresh rate of the ROS node and should therefore be lightweight.
+From inside the function it is also possible to access the global `board` struct, which can be used to store handles or other stateful information.
+For concurrency safety, only read access to the struct is advised.
+
+2. Provide a function to activate the new mode inside the `modes.c` file. 
+It gets called whenever this mode is selected for a specific pin. 
+As with read/write function, it has access to the `board` struct but is also allowed to make mutable changes.
+
+3. Add the new mode to the `pin_mode_t` enum inside the `modes.h` file
+
+4. Add a pointer to the function which activates the new mode (from point 2) to the `PIN_MODE_FUNCTIONS` array inside `modes.c`
+
+5. Add the direction (Input or Output) to the `PIN_DIRECTIONS` array in `modes.c`
+
+
+
+
+
