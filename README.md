@@ -19,6 +19,17 @@ The ROS node is containing a publisher and subscriber for reading and writing to
 
 The board layer is managing the access and state of the hardware components and exposes functions to read/write the values from the pins and change the board configuration.
 
+### Runtime Configuration
+
+When a new configuraion is received via the ROS service, depending on the mode number, the corresponding mode-activation function is called.
+The mode-activation function is responsible for correctly initializing the hardware and updating the board state.
+Specifically, it defines the direction of the mode (input or output) as well as adding the function pointer for the read/write function.
+
+### Reading and Writing
+
+Reading and writing from and to the pins of the microcontroller is done at the refresh rate of the ROS node.
+A loop goes over all pins and calls the correct read/write function depending on the configured pin direction.
+
 ## Adding new read/write modes
 
 So far, the program contains modes for reading and writing digital and analog signals.
