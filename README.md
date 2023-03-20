@@ -2,14 +2,28 @@
 
 This program exposes the hardware components of an ESP32 microcontroller to the ROS2 Ecosystem.
 It allows a direct mapping from topic to pin, which can be dynamically configured at runtime.
+It is currently work-in-progress and far from finished.
+
+## Feature List
+
+- [ ] Runtime configuration of:
+    - [x] Pin configuration
+    - [ ] UDP and serial connection 
+    - [ ] Sample rate
+    - [ ] ROS2 topics
+- [x] Lightweight read and write operations
+- [x] Simple addtion of new read/write modes
+- [ ] Robust error handling
+- [ ] Configuration via file
+- [ ] Configuration persistence after reboot
 
 ## Overview
-
-<img src="https://drive.google.com/uc?export=view&id=19eBBOYYDD7vcoYiBOruf9suX36mbpyZK" height="500">
 
 This program is intended to be run on an ESP32 microcontroller.
 On the ROS2 side, an Micro-ROS Agent has to be running to make the Microcontroller visible to the ROS2 Ecosystem.
 The communication between Program and Agent is possible either via Wifi (UDP) or Serial connection (USB).
+
+<img src="https://drive.google.com/uc?export=view&id=19eBBOYYDD7vcoYiBOruf9suX36mbpyZK" height="500">
 
 ## Program Structure
 
