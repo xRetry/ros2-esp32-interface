@@ -21,7 +21,7 @@ It is currently work-in-progress and far from finished.
 
 This program is intended to be run on an ESP32 microcontroller.
 On the ROS2 side, an Micro-ROS Agent has to be running to make the Microcontroller visible to the ROS2 Ecosystem.
-The communication between Program and Agent is possible either via Wifi (UDP) or Serial connection (USB).
+The communiaton between Program and Agent is possible either via Wifi (UDP) or Serial connection (USB).
 
 <img src="https://drive.google.com/uc?export=view&id=19eBBOYYDD7vcoYiBOruf9suX36mbpyZK" height="500">
 
@@ -64,7 +64,30 @@ As with read/write function, it has access to the `board` struct but is also all
 
 5. Add the direction (Input or Output) to the `PIN_DIRECTIONS` array in `modes.c`
 
+## Configuration File
 
+The `esp32-config-tool` can be used to change the configuration of the board.
+It can be executed in the command line with the addition of a file path.
+    
+    esp32-config-tool config.yml
 
+The configuration file itself is formatted as YAML.
+This is what an example configuration looks like:
 
+    transport: 
+        type: udp
+        agent_ip: 127.0.0.1
+        agent_port: 0.0.0.0
+        wifi_ssid: abcd
+        wifi_password: 1234
+        
+    pins:
+      - number: 1
+        mode: analog_output
+      - number: 2
+        mode: digital_input
 
+    topics:
+        service: /esp32_service
+        publisher: /esp32_pub
+        subscriber: /esp32_sub
