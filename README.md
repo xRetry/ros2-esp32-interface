@@ -91,3 +91,8 @@ This is what an example configuration looks like:
         service: /esp32_service
         publisher: /esp32_pub
         subscriber: /esp32_sub
+        
+## Testing Framework
+
+Unit tests are implemented using the Ceedling framework by mocking hardware components.
+To run all tests, execute `ceedling test` in the command line.
