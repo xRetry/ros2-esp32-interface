@@ -1,25 +1,20 @@
-#include <executor_handle.h>
-#include <rcl/allocator.h>
-#include <rosidl_runtime_c/service_type_support_struct.h>
 #include <unistd.h>
 
+#include <rcl/allocator.h>
 #include <rcl/error_handling.h>
 #include <rclc/executor.h>
 #include <rclc/rclc.h>
+#include <rosidl_runtime_c/service_type_support_struct.h>
+#include <uros_network_interfaces.h>
+#include <rmw_microros/rmw_microros.h>
 
 #include "esp_err.h"
+#include <executor_handle.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
 #include "freertos/task.h"
 
 #include "board.h"
-
-#include <uros_network_interfaces.h>
-#include <rmw_microros/rmw_microros.h>
-
-rcl_publisher_t publisher;
-pin_values_t recv_msg;
-
 
 #define RCCHECK(fn)                                                            \
   {                                                                            \
@@ -39,8 +34,8 @@ pin_values_t recv_msg;
     }                                                                          \
   }
 
-//#define RMW_UXRCE_TRANSPORT_SERIAL 1
-//#define RMW_UXRCE_TRANSPORT_UDP 1
+rcl_publisher_t publisher;
+pin_values_t recv_msg;
 
 void handle_write_pins(const void *msgin) {
     const pin_values_t *msg = (const pin_values_t*) msgin;
@@ -68,45 +63,6 @@ void handle_set_pin(const void *msg_req, void *msg_rsp) {
     response->is_ok = err == ESP_OK;
 }
 
-esp_err_t connect(rcl_allocator_t *allocator, bool wifi) {
-    // Init RCL options and context
-    rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
-    rcl_context_t context = rcl_get_zero_initialized_context();
-    *allocator = rcl_get_default_allocator();
-    printf("init options\n");
-    RCCHECK(rcl_init_options_init(&init_options, *allocator));
-
-    printf("init rmw options\n");
-    // Take RMW options from RCL options
-    rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(&init_options);
-
-    if (wifi) {
-        printf("try wifi\n");
-        // TCP/UDP case: Set RMW IP parameters
-        rmw_uros_options_set_udp_address("10.0.0.38", "8888", rmw_options);
-    } else {
-        printf("try serial\n");
-        // Serial case: Set RMW serial device parameters
-        rmw_uros_options_set_serial_device("/dev/ttyUSB0", rmw_options);
-    }
-
-    //printf("set client key\n");
-    // Set RMW client key
-    //rmw_uros_options_set_client_key(0xBA5EBA11, rmw_options);
-
-    // Init RCL
-    printf("init rcl\n");
-    esp_err_t err = rcl_init(0, NULL, &init_options, &context);
-    if (err != ESP_OK) {
-        printf("error %d\n", err);
-        //RCCHECK(rcl_shutdown(&context));
-        RCCHECK(rcl_init_options_fini(&init_options));
-    }
-    return err;
-
-    // ... micro-ROS code ...
-}
-
 void init_node(void *arg) {
     printf("Enter init_node\n");
     RCCHECK(board_init());
@@ -128,23 +84,10 @@ void init_node(void *arg) {
 	// create init_options
 	RCCHECK(rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator));
 
-
-	// create init_options
-	//RCCHECK(rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator));
-    
-    //esp_err_t err = ESP_FAIL;
-    //bool try_wifi = true;
-    //while (err != ESP_OK) {
-    //    err = connect(&allocator, try_wifi);
-    //    try_wifi = !try_wifi;
-    //    vTaskDelay(2000/ portTICK_PERIOD_MS);
-    //}
-
     printf("init success\n");
 
     // --- Create node ---
 
-    //rcl_node_t node = rcl_get_zero_initialized_node();
     rcl_node_t node; 
     RCCHECK(rclc_node_init_default(&node, "esp32_interface", "", &support));
 
@@ -168,45 +111,44 @@ void init_node(void *arg) {
 
     // --- Create subscriber ---
     
-    //rcl_subscription_t subscriber;
-    //RCCHECK(rclc_subscription_init_best_effort(
-    //    &subscriber, 
-    //    &node, 
-    //    ROSIDL_GET_MSG_TYPE_SUPPORT(ros2_esp32_interfaces, msg, PinValues),
-    //    "esp32_write_pins"
-    //));
+    rcl_subscription_t subscriber;
+    RCCHECK(rclc_subscription_init_best_effort(
+        &subscriber, 
+        &node, 
+        ROSIDL_GET_MSG_TYPE_SUPPORT(ros2_esp32_interfaces, msg, PinValues),
+        "esp32_write_pins"
+    ));
 
     // Add subscriber to executor
-    //RCCHECK(rclc_executor_add_subscription(
-    //    &executor,
-    //    &subscriber,
-    //    &recv_msg,
-    //    &handle_write_pins,
-    //    ON_NEW_DATA
-    //));
+    RCCHECK(rclc_executor_add_subscription(
+        &executor,
+        &subscriber,
+        &recv_msg,
+        &handle_write_pins,
+        ON_NEW_DATA
+    ));
 
     // --- Create service ---
     
     // Initialize server with default configuration
-    //rcl_service_t service;
-    //RCCHECK(rclc_service_init_default(
-    //    &service, 
-    //    &node,
-    //    ROSIDL_GET_SRV_TYPE_SUPPORT(ros2_esp32_interfaces, srv, SetPin), 
-    //    "/esp32_set_pin"
-    //));
+    rcl_service_t service;
+    RCCHECK(rclc_service_init_default(
+        &service, 
+        &node,
+        ROSIDL_GET_SRV_TYPE_SUPPORT(ros2_esp32_interfaces, srv, SetPin), 
+        "esp32_set_pin"
+    ));
+    
+    set_pin_req_t set_pin_req;
+    set_pin_rsp_t set_pin_rsp;
 
-    //
-    //set_pin_req_t set_pin_req;
-    //set_pin_rsp_t set_pin_rsp;
-
-    //RCCHECK(rclc_executor_add_service(
-    //        &executor, 
-    //        &service, 
-    //        &set_pin_req, 
-    //        &set_pin_rsp, 
-    //        &handle_set_pin
-    //));
+    RCCHECK(rclc_executor_add_service(
+            &executor, 
+            &service, 
+            &set_pin_req, 
+            &set_pin_rsp, 
+            &handle_set_pin
+    ));
 
     // --- Create timer ---
 
@@ -233,9 +175,9 @@ void init_node(void *arg) {
 
     // --- Free resources ---
 
-    //RCCHECK(rcl_subscription_fini(&subscriber, &node));
+    RCCHECK(rcl_subscription_fini(&subscriber, &node));
     RCCHECK(rcl_publisher_fini(&publisher, &node));
-    //RCCHECK(rcl_service_fini(&service, &node));
+    RCCHECK(rcl_service_fini(&service, &node));
     RCCHECK(rcl_node_fini(&node));
 
     vTaskDelete(NULL);

@@ -1,7 +1,5 @@
 #include "board.h"
 
-const pin_mode_directions_t PIN_DIRECTIONS[5];
-
 board_t board;
 pthread_rwlock_t _lock = PTHREAD_RWLOCK_INITIALIZER;
 
@@ -47,15 +45,17 @@ esp_err_t board_write(double (*vals_in)[NUM_PINS]) {
 
 esp_err_t board_set_pin(set_pin_req_t *request) {
     pin_config_t *cfg = &request->new_config;
+    uint8_t pin_mode = (uint8_t) cfg->pin_mode;
+    uint8_t pin_nr = (uint8_t) cfg->pin_nr;
 
     pthread_rwlock_wrlock(&board.lock);
 
     // TODO: Change message to contain mode
     esp_err_t err = ESP_FAIL;
-    err = (*PIN_MODE_FUNCTIONS[cfg->pin_mode])(cfg->pin_nr);
+    err = PIN_MODE_FUNCTIONS[pin_mode](pin_nr);
 
     if (err == ESP_OK) {
-        board.pin_modes[cfg->pin_nr] = cfg->pin_mode;
+        board.pin_modes[pin_nr] = pin_mode;
     }
 
     pthread_rwlock_unlock(&board.lock);
