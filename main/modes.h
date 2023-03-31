@@ -2,7 +2,9 @@
 #define MODES_H_
 
 #include "driver/gpio.h"
-#include "esp_adc/adc_oneshot.h"
+#include "driver/adc.h"
+#include "esp_adc_cal.h"
+#include "driver/dac.h"
 #include <ros2_esp32_interfaces/msg/detail/pin_config__functions.h>
 #include <ros2_esp32_interfaces/msg/detail/pin_config__struct.h>
 #include <ros2_esp32_interfaces/msg/pin_values.h>
@@ -34,7 +36,8 @@ typedef enum pin_mode_t {
 typedef struct board_c {
     pin_mode_t pin_modes[NUM_PINS];
     esp_err_t (*pin_functions[NUM_PINS])(uint8_t, double*);
-    adc_oneshot_unit_handle_t adc_handles[NUM_PINS];
+    adc1_channel_t adc_handles[NUM_PINS];
+    esp_adc_cal_characteristics_t adc_chars[NUM_PINS];
     pthread_rwlock_t lock;
 } board_t;
 
