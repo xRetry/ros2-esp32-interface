@@ -48,12 +48,12 @@
 
 void run() {
     board_init();
-    xTaskCreate(run, "uros_task", CONFIG_MICRO_ROS_APP_STACK, NULL,
-        CONFIG_MICRO_ROS_APP_TASK_PRIO, NULL);
+    node_init();
     vTaskDelete(NULL);
 }
 
 void app_main(void) {
-    run();
+    xTaskCreate(run, "uros_task", CONFIG_MICRO_ROS_APP_STACK, NULL,
+        CONFIG_MICRO_ROS_APP_TASK_PRIO, NULL);
     //test_board();
 }
