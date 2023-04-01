@@ -5,13 +5,13 @@
 #include "esp_err.h"
 #include "modes.h"
 
-esp_err_t board_init();
+void board_init();
 
-esp_err_t board_write(double (*vals_in)[NUM_PINS]);
+void board_write(double (*vals_in)[NUM_PINS]);
 
-esp_err_t board_read(double (*vals_out)[NUM_PINS]);
+void board_read(double (*vals_out)[NUM_PINS]);
 
-esp_err_t board_set_pin(set_pin_req_t *request);
+void board_set_pins(pin_config_t *pin_config);
 
 #endif // BOARD_H_
 

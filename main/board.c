@@ -1,19 +1,32 @@
 #include "board.h"
+#include "modes.h"
+#include <string.h>
 
 board_t board;
 pthread_rwlock_t _lock = PTHREAD_RWLOCK_INITIALIZER;
 
-esp_err_t board_init() {
+void board_init() {
     printf("board_init\n");
+
+    board.agent_ip = strdup(CONFIG_MICRO_ROS_AGENT_IP);
+    board.agent_port = strdup(CONFIG_MICRO_ROS_AGENT_PORT);
+    board.node_name = strdup("esp32_interface");
+    board.subscriber_name = strdup("esp32_write_pins");
+    board.publisher_name = strdup("esp32_read_pins");
+    board.service_name = strdup("esp32_set_config");
+    board.use_wifi = true;
+    board.wifi_ssid = strdup("ssid");
+    board.wifi_pw = strdup("wifi_pw");
+    board.refresh_rate_ms = 1000;
+
     for (int pin_nr=0; pin_nr<NUM_PINS; pin_nr++) {
         board.pin_modes[pin_nr] = MODE_DISABLED;
     }
 
     board.lock = _lock;
-    return ESP_OK;
 }
 
-esp_err_t call_pin_functions(double (*vals)[NUM_PINS], pin_mode_directions_t mode_dir) {
+void call_pin_functions(double (*vals)[NUM_PINS], pin_mode_directions_t mode_dir) {
     pthread_rwlock_rdlock(&board.lock);
 
     for (int pin_nr=0; pin_nr<NUM_PINS; pin_nr++) {
@@ -31,34 +44,24 @@ esp_err_t call_pin_functions(double (*vals)[NUM_PINS], pin_mode_directions_t mod
     }
 
     pthread_rwlock_unlock(&board.lock);
-    return ESP_OK;
 }
 
-esp_err_t board_read(double (*vals_out)[NUM_PINS]) {
-    return call_pin_functions(vals_out, INPUT);
+void board_read(double (*vals_out)[NUM_PINS]) {
+    call_pin_functions(vals_out, INPUT);
 }
 
 
-esp_err_t board_write(double (*vals_in)[NUM_PINS]) {
-    return call_pin_functions(vals_in, OUTPUT);
+void board_write(double (*vals_in)[NUM_PINS]) {
+    call_pin_functions(vals_in, OUTPUT);
 }
 
-esp_err_t board_set_pin(set_pin_req_t *request) {
-    pin_config_t *cfg = &request->new_config;
-    uint8_t pin_mode = (uint8_t) cfg->pin_mode;
-    uint8_t pin_nr = (uint8_t) cfg->pin_nr;
-
-    pthread_rwlock_wrlock(&board.lock);
-
-    // TODO: Change message to contain mode
-    esp_err_t err = ESP_FAIL;
-    err = PIN_MODE_FUNCTIONS[pin_mode](pin_nr);
-
-    if (err == ESP_OK) {
-        board.pin_modes[pin_nr] = pin_mode;
+void board_set_pins(pin_config_t *pin_config) {
+    for (int pin_nr=0; pin_nr<NUM_PINS; pin_nr++) {
+        pin_mode_t new_pin_mode = pin_config->pin_modes[pin_nr];
+        board.pin_errors[pin_nr] = PIN_MODE_FUNCTIONS[new_pin_mode](pin_nr);
+        if (board.pin_errors[pin_nr] == ESP_OK) {
+            board.pin_modes[pin_nr] = new_pin_mode;
+        }
     }
-
-    pthread_rwlock_unlock(&board.lock);
-    return err;
 }
 
