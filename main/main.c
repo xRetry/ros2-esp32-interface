@@ -1,9 +1,9 @@
-#include "node.h"
 //#include "freertos/portmacro.h"
 //#include <executor_handle.h>
 #include "sdkconfig.h"
+#include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-//#include "freertos/FreeRTOS.h"
+#include "node.h"
 
 //void test_board() {
 //    board_init();
@@ -53,7 +53,7 @@ void run() {
 }
 
 void app_main(void) {
-    xTaskCreate(run, "uros_task", CONFIG_MICRO_ROS_APP_STACK, NULL,
+    xTaskCreate(run, "uros_task", CONFIG_MICRO_ROS_APP_STACK, NULL, 
         CONFIG_MICRO_ROS_APP_TASK_PRIO, NULL);
     //test_board();
 }

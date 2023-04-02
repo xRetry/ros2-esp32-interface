@@ -17,13 +17,6 @@
   :default_tasks:
     - test:all
 
-#:test_build:
-#  :use_assembly: TRUE
-
-#:release_build:
-#  :output: MyApp.out
-#  :use_assembly: FALSE
-
 :environment:
 
 :extension:
@@ -45,9 +38,10 @@
      - /opt/esp/idf/components/esp_common/include/**
      - /opt/esp/idf/components/esp_hw_support/include/**
      - /opt/esp/idf/components/esp_rom/include/**
-     - /opt/esp/idf/components/soc/esp32/include/**
+    #- /opt/esp/idf/components/soc/esp32/include/**
      - /opt/esp/idf/components/hal/include/
      - /opt/esp/idf/components/soc/include/
+     - /opt/esp/idf/components/soc/esp32/include/
      - /opt/esp/idf/components/driver/include/
      - /opt/esp/idf/components/driver/esp32/include/
      - /opt/esp/idf/components/esp_adc_cal/include/
