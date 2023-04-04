@@ -1,6 +1,6 @@
 #include "modes.h"
 #include "hal/adc_types.h"
-#include "esp_log.h"
+//#include "esp_log.h"
 
 // --- Disable --- //
 
@@ -45,8 +45,6 @@ esp_err_t set_pin_digital_output(uint8_t pin_nr) {
 
 esp_err_t read_pin_analog(uint8_t pin_nr, double *val) {
     *val = adc1_get_raw(board.adc_handles[pin_nr]);
-    uint32_t voltage = esp_adc_cal_raw_to_voltage(*val, &board.adc_chars[pin_nr]);
-    printf("cali data: %d mV\n", voltage);
     return ESP_OK;
 }
 
@@ -61,46 +59,18 @@ esp_err_t set_pin_analog_output(uint8_t pin_nr) {
     return ESP_OK;
 }
 
-static bool adc_calibration_init(adc_atten_t adc_attention, esp_adc_cal_characteristics_t adc_chars)
-{
-    bool cali_enable = false;
-    esp_adc_cal_value_t cali_scheme = ESP_ADC_CAL_VAL_EFUSE_VREF;
-    static const char *TAG = "ADC SINGLE";
-
-    esp_err_t ret;
-    ret = esp_adc_cal_check_efuse(cali_scheme);
-    if (ret == ESP_ERR_NOT_SUPPORTED) {
-        ESP_LOGW(TAG, "Calibration scheme not supported, skip software calibration");
-    } else if (ret == ESP_ERR_INVALID_VERSION) {
-        ESP_LOGW(TAG, "eFuse not burnt, skip software calibration");
-    } else if (ret == ESP_OK) {
-        cali_enable = true;
-        esp_adc_cal_characterize(ADC_UNIT_1, adc_attention, ADC_WIDTH_BIT_DEFAULT, 0, &adc_chars);
-    } else {
-        ESP_LOGE(TAG, "Invalid arg");
-    }
-
-    return cali_enable;
-}
-
 esp_err_t set_pin_analog_input(uint8_t pin_nr) {
-    static esp_adc_cal_characteristics_t adc_chars;
     adc_atten_t adc_attention = ADC_ATTEN_DB_11;
-    bool cali_enable = adc_calibration_init(adc_attention, adc_chars);
-    if (!cali_enable) {
-        return ESP_FAIL;
-    }
     adc1_channel_t channel = ADC1_CHANNEL_5;
 
     //ADC1 config
-    ESP_ERROR_CHECK(adc1_config_width(ADC_WIDTH_BIT_DEFAULT));
-    ESP_ERROR_CHECK(adc1_config_channel_atten(channel, adc_attention));
+    esp_err_t err = adc1_config_width(ADC_WIDTH_BIT_DEFAULT);
+    err = adc1_config_channel_atten(channel, adc_attention);
 
     board.pin_functions[pin_nr] = &read_pin_analog;
     board.adc_handles[pin_nr] = channel;
-    board.adc_chars[pin_nr] = adc_chars;
 
-    return ESP_OK;
+    return err;
 }
 
 ///

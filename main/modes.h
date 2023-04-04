@@ -54,7 +54,6 @@ typedef struct {
     pin_mode_t pin_modes[NUM_PINS];
     esp_err_t (*pin_functions[NUM_PINS])(uint8_t, double*);
     adc1_channel_t adc_handles[NUM_PINS];
-    esp_adc_cal_characteristics_t adc_chars[NUM_PINS];
     pthread_rwlock_t lock;
     rclc_executor_t executor;
     rcl_node_t node;

@@ -32,20 +32,17 @@
     - test/support
   :libraries: []
   :include:
-    #- /opt/esp/idf/components/micro_ros_espidf_component/include/ros2_esp32_interfaces/**
-    #- /opt/esp/idf/components/micro_ros_espidf_component/include/rosidl_runtime_c/**
-    #- /opt/esp/idf/components/micro_ros_espidf_component/include/rosidl_typesupport_interface/**
-     - /opt/esp/idf/components/esp_common/include/**
-     - /opt/esp/idf/components/esp_hw_support/include/**
-     - /opt/esp/idf/components/esp_rom/include/**
-    #- /opt/esp/idf/components/soc/esp32/include/**
+     - /opt/esp/idf/components/esp_common/include/
+     - /opt/esp/idf/components/esp_hw_support/include/
+     - /opt/esp/idf/components/esp_rom/include/
      - /opt/esp/idf/components/hal/include/
      - /opt/esp/idf/components/soc/include/
      - /opt/esp/idf/components/soc/esp32/include/
-     - /opt/esp/idf/components/driver/include/
      - /opt/esp/idf/components/driver/esp32/include/
      - /opt/esp/idf/components/esp_adc_cal/include/
+     - /opt/esp/idf/components/log/include/
      - /opt/esp/idf/components/micro_ros_espidf_component/include/*
+    # - /opt/esp/idf/components/driver/include/
 
 :files:
   :include:
@@ -88,10 +85,19 @@
     :html_medium_threshold: 75
     :html_high_threshold: 90
 
-#:tools:
+:tools:
 # Ceedling defaults to using gcc for compiling, linking, etc.
 # As [:tools] is blank, gcc will be used (so long as it's in your system path)
 # See documentation to configure a given toolchain for use
+    :test_linker:
+      :executable: gcc                  #absolute file path
+      :name: 'gcc linker'
+      :arguments:
+        - ${1}                          #list of object files to link (Ruby method call param list sub)
+        - -pthread              #location of external libraries
+        - -I/opt/esp/idf/components/esp_common/include/
+        - -I/opt/esp/idf/components/esp_hw_support/include/
+        - -o ${2}
 
 # LIBRARIES
 # These libraries are automatically injected into the build process. Those specified as
