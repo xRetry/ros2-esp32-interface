@@ -17,7 +17,7 @@
 #include <ros2_esp32_interfaces/srv/detail/set_config__functions.h>
 #include <rclc/executor.h>
 
-#define NUM_PINS 35
+#define NUM_PINS 36
 
 typedef ros2_esp32_interfaces__srv__SetConfig_Request set_config_req_t;
 typedef ros2_esp32_interfaces__srv__SetConfig_Response set_config_rsp_t;
@@ -45,7 +45,7 @@ typedef struct {
     char *wifi_ssid;
     char *wifi_pw;
     char *agent_ip;
-    char * agent_port;
+    char *agent_port;
     char *node_name;
     char *subscriber_name;
     char *publisher_name;
