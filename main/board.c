@@ -20,6 +20,7 @@ void board_init() {
     board.refresh_rate_ms = 1000;
 
     for (int pin_nr=0; pin_nr<NUM_PINS; pin_nr++) {
+        board.pin_errors[pin_nr] = ESP_OK;
         board.pin_modes[pin_nr] = MODE_DISABLED;
     }
 
@@ -30,15 +31,15 @@ void call_pin_functions(double (*vals)[NUM_PINS], pin_mode_directions_t mode_dir
     pthread_rwlock_rdlock(&board.lock);
 
     for (int pin_nr=0; pin_nr<NUM_PINS; pin_nr++) {
-        esp_err_t err = ESP_FAIL;
-        // Check the direction of the current pin mode
+        board.pin_errors[pin_nr] = ESP_FAIL;
+        // Only call function if the direction is correct
         if (PIN_DIRECTIONS[board.pin_modes[pin_nr]] == mode_dir) {
-            err = (*board.pin_functions[pin_nr])(
+            board.pin_errors[pin_nr] = (*board.pin_functions[pin_nr])(
                 pin_nr, 
                 &(*vals)[pin_nr]
             );
         }
-        if (err != ESP_OK) {
+        if (board.pin_errors[pin_nr] != ESP_OK) {
             (*vals)[pin_nr] = 0.;
         }
     }
@@ -61,6 +62,8 @@ void board_set_pins(pin_config_t *pin_config) {
         board.pin_errors[pin_nr] = PIN_MODE_FUNCTIONS[new_pin_mode](pin_nr);
         if (board.pin_errors[pin_nr] == ESP_OK) {
             board.pin_modes[pin_nr] = new_pin_mode;
+        } else {
+            board.pin_modes[pin_nr] = MODE_DISABLED;
         }
     }
 }

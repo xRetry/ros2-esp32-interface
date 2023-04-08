@@ -60,9 +60,9 @@ typedef struct {
     rcl_subscription_t subscriber;
     rcl_publisher_t publisher;
     rcl_service_t service;
-    uint8_t pin_errors[NUM_PINS];
-    uint8_t node_error;
-    uint8_t transport_error;
+    esp_err_t pin_errors[NUM_PINS];
+    rcl_ret_t node_error;
+    rcl_ret_t transport_error;
 } board_t;
 
 extern board_t board;

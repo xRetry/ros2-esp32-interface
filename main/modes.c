@@ -16,7 +16,8 @@ esp_err_t read_pin_digital(uint8_t pin_nr, double *val) {
 }
 
 esp_err_t write_pin_digital(uint8_t pin_nr, double *val) {
-    return gpio_set_level(pin_nr, *val);
+    esp_err_t err = gpio_set_level(pin_nr, *val);
+    return err;
 }
 
 esp_err_t  set_pin_digital_input(uint8_t pin_nr) {

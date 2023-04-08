@@ -20,11 +20,7 @@ esp_err_t callback_gpio_set_level(gpio_num_t pin_nr, uint32_t val, int num_calls
     return ESP_OK;
 }
 
-void setUp(void) {
-    gpio_get_level_StubWithCallback(&callback_gpio_get_level);
-    gpio_set_level_StubWithCallback(&callback_gpio_set_level);
-    gpio_config_IgnoreAndReturn(ESP_OK);
-}
+void setUp(void) {}
 
 void test_init_board(void) {
     board_init();
@@ -41,11 +37,16 @@ void test_init_board(void) {
     TEST_ASSERT_EQUAL_UINT32(1000, board.refresh_rate_ms);
 
     for (int i=0; i<NUM_PINS; i++) {
+        TEST_ASSERT_EQUAL_INT(ESP_OK, board.pin_errors[i]);
         TEST_ASSERT_TRUE(board.pin_modes[i] == MODE_DISABLED);
     }
 }
 
-void test_set_read_write() {
+void test_config_read_write() {
+    gpio_get_level_StubWithCallback(&callback_gpio_get_level);
+    gpio_set_level_StubWithCallback(&callback_gpio_set_level);
+    gpio_config_IgnoreAndReturn(ESP_OK);
+
     board_init();
 
     uint8_t pin_modes[NUM_PINS];
@@ -54,21 +55,58 @@ void test_set_read_write() {
 
     board_set_pins(&pin_config);
 
-    printf("%d\n", pin_config.pin_modes[35]);
-    printf("%d\n", MODE_DIGITAL_OUTPUT);
-    printf("%d\n", board.pin_modes[35] == MODE_DIGITAL_OUTPUT);
+    double vals_in[NUM_PINS];
+    for (int i=0; i<NUM_PINS; i++) vals_in[i] = i;
+    board_write(&vals_in);
 
-    //double vals_in[NUM_PINS];
-    //for (int i=0; i<NUM_PINS; i++) vals_in[i] = i;
-    //board_write(&vals_in);
+    for (int i=0; i<NUM_PINS; i++) pin_config.pin_modes[i] = MODE_DIGITAL_INPUT;
+    board_set_pins(&pin_config);
 
-    //for (int i=0; i<NUM_PINS; i++) pin_config.pin_modes[i] = MODE_DIGITAL_INPUT;
-    //board_set_pins(&pin_config);
+    double vals_out[NUM_PINS];
+    board_read(&vals_out);
 
-    //printf("%f\n", pin_values[35]);
-
-    //double vals_out[NUM_PINS];
-    //board_read(&vals_out);
-
-    //for (int i=0; i<NUM_PINS; i++) TEST_ASSERT_FLOAT_WITHIN(1e-5, i, vals_out[i]);
+    for (int i=0; i<NUM_PINS; i++) TEST_ASSERT_FLOAT_WITHIN(1e-5, i, vals_out[i]);
 }
+
+void test_write_error() {
+    gpio_config_IgnoreAndReturn(ESP_OK);
+    gpio_set_level_IgnoreAndReturn(ESP_FAIL);
+
+    board_init();
+
+    uint8_t pin_modes[NUM_PINS];
+    pin_config_t pin_config;
+    for (int i=0; i<NUM_PINS; i++) pin_config.pin_modes[i] = MODE_DIGITAL_OUTPUT;
+
+    board_set_pins(&pin_config);
+
+    double vals_out[NUM_PINS];
+    for (int i=0; i<NUM_PINS; i++) vals_out[i] = i;
+    board_write(&vals_out);
+
+    for (int i=0; i<NUM_PINS; i++) {
+        TEST_ASSERT_EQUAL_INT(ESP_FAIL, board.pin_errors[i]);
+    }
+}
+
+void test_config_error() {
+    gpio_config_IgnoreAndReturn(ESP_OK);
+
+    board_init();
+
+    uint8_t pin_modes[NUM_PINS];
+    pin_config_t pin_config;
+    for (int i=0; i<NUM_PINS; i++) pin_config.pin_modes[i] = MODE_DIGITAL_OUTPUT;
+    board_set_pins(&pin_config);
+
+    gpio_config_IgnoreAndReturn(ESP_FAIL);
+
+    for (int i=0; i<NUM_PINS; i++) pin_config.pin_modes[i] = MODE_DIGITAL_INPUT;
+    board_set_pins(&pin_config);
+
+    for (int i=0; i<NUM_PINS; i++) {
+        TEST_ASSERT_EQUAL_INT(ESP_FAIL, board.pin_errors[i]);
+        TEST_ASSERT_EQUAL_UINT8(MODE_DISABLED, board.pin_modes[i]);
+    }
+}
+
