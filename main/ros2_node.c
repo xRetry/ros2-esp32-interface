@@ -8,7 +8,7 @@
 #include <rmw_microros/rmw_microros.h>
 #include <unistd.h>
 
-#include "node.h"
+#include "ros2_node.h"
 //#include "sdkconfig.h"
 
 #define RCCHECK(fn) {\
@@ -33,7 +33,7 @@ rcl_ret_t node_shutdown() {
 void handle_write_pins(const void *msgin) {
     const pin_values_t *msg = (const pin_values_t*) msgin;
 
-    board_write(&msg->values);
+    board_write((double (*)[NUM_PINS]) &msg->values);
 }
 
 void handle_read_pins(rcl_timer_t *timer, int64_t last_call_time) {
@@ -41,13 +41,13 @@ void handle_read_pins(rcl_timer_t *timer, int64_t last_call_time) {
 
     if (timer != NULL) {
         pin_values_t msg;
-        board_read(&msg.values);
+        board_read((double (*)[NUM_PINS]) &msg.values);
         rcl_ret_t err = rcl_publish(&board.publisher, &msg, NULL);
         board.node_error = err;
     }
 }
 
-void handle_set_pin(const void *msg_req, void *msg_rsp) {
+void handle_set_config(const void *msg_req, void *msg_rsp) {
     // Cast messages to expected types
     set_config_req_t * request = (set_config_req_t *) msg_req;
     set_config_rsp_t * response = (set_config_rsp_t *) msg_rsp;
@@ -91,7 +91,23 @@ void handle_set_pin(const void *msg_req, void *msg_rsp) {
 
     pthread_rwlock_unlock(&board.lock);
 
-    response->pin_error = board.pin_errors;
+    for (int i=0; i<NUM_PINS; i++) {
+        response->active_pin_config.pin_modes[i] = board.pin_modes[i];
+        response->pin_error[i] = board.pin_errors[i];
+    }
+    response->active_node_config.refresh_rate_ms = board.refresh_rate_ms;
+    response->active_node_config.node_name.data = board.node_name;
+    response->active_node_config.publisher_name.data = board.publisher_name;
+    response->active_node_config.subscriber_name.data = board.subscriber_name;
+    response->active_node_config.service_name.data = board.service_name;
+    response->node_error = board.node_error;
+
+    response->active_transport_config.use_wifi = board.use_wifi;
+    response->active_transport_config.agent_ip.data = board.agent_ip;
+    response->active_transport_config.agent_port.data = board.agent_port;
+    response->active_transport_config.wifi_ssid.data = board.wifi_ssid;
+    response->active_transport_config.wifi_pw.data = board.wifi_pw;
+    response->transport_error = board.transport_error;
 }
 
 rcl_ret_t node_try_init() {
@@ -99,16 +115,19 @@ rcl_ret_t node_try_init() {
 
 
     if (board.use_wifi) {
-        printf("init network");
-        ESP_ERROR_CHECK(uros_network_interface_initialize());
+        printf("init network\n");
+        esp_err_t err = uros_network_interface_initialize();
+        printf("%d\n", err);
     }
 
+    printf("cp\n");
 	rcl_allocator_t allocator = rcl_get_default_allocator();
 	rclc_support_t support;
 
 	rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
 	RCCHECK(rcl_init_options_init(&init_options, allocator));
 
+    printf("cp\n");
 	rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(&init_options);
 
 	// Static Agent IP and port can be used instead of autodisvery.
@@ -178,7 +197,7 @@ rcl_ret_t node_try_init() {
         &board.service, 
         &set_pin_req, 
         &set_pin_rsp, 
-        &handle_set_pin
+        &handle_set_config
     ));
 
     // --- Create timer ---

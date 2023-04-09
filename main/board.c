@@ -1,5 +1,5 @@
 #include "board.h"
-#include "modes.h"
+//#include "modes.h"
 #include <string.h>
 
 board_t board;
@@ -27,7 +27,7 @@ void board_init() {
     board.lock = _lock;
 }
 
-void call_pin_functions(double (*vals)[NUM_PINS], pin_mode_directions_t mode_dir) {
+void call_pin_functions(double vals[NUM_PINS], pin_mode_directions_t mode_dir) {
     pthread_rwlock_rdlock(&board.lock);
 
     for (int pin_nr=0; pin_nr<NUM_PINS; pin_nr++) {
@@ -36,23 +36,23 @@ void call_pin_functions(double (*vals)[NUM_PINS], pin_mode_directions_t mode_dir
         if (PIN_DIRECTIONS[board.pin_modes[pin_nr]] == mode_dir) {
             board.pin_errors[pin_nr] = (*board.pin_functions[pin_nr])(
                 pin_nr, 
-                &(*vals)[pin_nr]
+                &vals[pin_nr]
             );
         }
         if (board.pin_errors[pin_nr] != ESP_OK) {
-            (*vals)[pin_nr] = 0.;
+            vals[pin_nr] = 0.;
         }
     }
 
     pthread_rwlock_unlock(&board.lock);
 }
 
-void board_read(double (*vals_out)[NUM_PINS]) {
+void board_read(double vals_out[NUM_PINS]) {
     call_pin_functions(vals_out, INPUT);
 }
 
 
-void board_write(double (*vals_in)[NUM_PINS]) {
+void board_write(double vals_in[NUM_PINS]) {
     call_pin_functions(vals_in, OUTPUT);
 }
 

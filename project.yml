@@ -42,7 +42,8 @@
      - /opt/esp/idf/components/esp_adc_cal/include/
      - /opt/esp/idf/components/log/include/
      - /opt/esp/idf/components/micro_ros_espidf_component/include/*
-    # - /opt/esp/idf/components/driver/include/
+     - /opt/esp/idf/components/micro_ros_espidf_component/network_interfaces/
+     - /opt/esp/idf/components/esp_system/include/
 
 :files:
   :include:
@@ -67,13 +68,19 @@
   :enforce_strict_ordering: TRUE
   :plugins:
     - :ignore
+    - :ignore_arg
     - :callback
+    - :expect_any_args
   :treat_as:
     uint8:    HEX8
     uint16:   HEX16
     uint32:   UINT32
     int8:     INT8
     bool:     UINT8
+
+#:treat_as_array:
+#  - vals_in
+#  - vals_out
 
 # Add -gcov to the plugins list to make sure of the gcov plugin
 # You will need to have gcov and gcovr both installed to make it work.
