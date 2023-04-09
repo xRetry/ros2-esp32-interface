@@ -17,8 +17,8 @@
         printf("Failed status on line %d: %d.\n",\
             __LINE__, (int) err\
         );\
+        return err;\
     }\
-    return err;\
 }
 
 pin_values_t recv_msg;
@@ -28,12 +28,13 @@ rcl_ret_t node_shutdown() {
     RCCHECK(rcl_publisher_fini(&board.publisher, &board.node));
     RCCHECK(rcl_service_fini(&board.service, &board.node));
     RCCHECK(rcl_node_fini(&board.node));
+    return RCL_RET_OK;
 }
 
 void handle_write_pins(const void *msgin) {
     const pin_values_t *msg = (const pin_values_t*) msgin;
 
-    board_write((double (*)[NUM_PINS]) &msg->values);
+    board_write(&msg->values);
 }
 
 void handle_read_pins(rcl_timer_t *timer, int64_t last_call_time) {
@@ -41,7 +42,7 @@ void handle_read_pins(rcl_timer_t *timer, int64_t last_call_time) {
 
     if (timer != NULL) {
         pin_values_t msg;
-        board_read((double (*)[NUM_PINS]) &msg.values);
+        board_read(&msg.values);
         rcl_ret_t err = rcl_publish(&board.publisher, &msg, NULL);
         board.node_error = err;
     }
@@ -83,9 +84,12 @@ void handle_set_config(const void *msg_req, void *msg_rsp) {
     }
 
     if (change_node || change_transport) {
-        // TODO: Retry shutdown if fail
+        
+        // NOTE: This will stop the node and therefore current thread.
+        // Afterwards the node will restart automatically.
+        // A response will never be sended.
         rcl_ret_t err = node_shutdown();
-        // TODO: Swtich to fallback if error
+
         board.node_error = err;
     }
 
@@ -212,6 +216,8 @@ rcl_ret_t node_try_init() {
     ));
     // Add timer and subscriber to executor.
     RCCHECK(rclc_executor_add_timer(&board.executor, &timer));
+
+    return RCL_RET_OK;
 }
 
 void node_run() {
