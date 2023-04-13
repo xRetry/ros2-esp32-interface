@@ -3,7 +3,10 @@
 
 #include "board.h"
 
-void node_init();
+bool node_ping_agent();
+bool node_init();
 void node_run();
+bool node_transport_init();
+bool node_shutdown();
 
 #endif

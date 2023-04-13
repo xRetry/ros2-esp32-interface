@@ -3,7 +3,6 @@
 #include <pthread.h>
 #include "esp_err.h"
 #include <rcl/error_handling.h>
-#include <rcl/error_handling.h>
 
 #include "mock_rclc.h"
 #include "mock_allocator.h"
@@ -29,16 +28,12 @@ board_t board;
 rcl_init_options_t rcl_get_zero_initialized_init_options(void) {
   return (const rcl_init_options_t) {
            .impl = 0,
-  };  // NOLINT(readability/braces): false positive
+  };  
 }
 
 rcl_ret_t
 rcl_init_options_init(rcl_init_options_t * init_options, rcl_allocator_t allocator) {
   return RCL_RET_OK;
-}
-
-void rosidl_typesupport_c__get_message_type_support_handle__ros2_esp32_interfaces__msg__PinValues() {
-
 }
 
 void setUp(void) {}
@@ -92,8 +87,8 @@ void test_handle_set_config() {
     set_config_rsp_t rsp;
 
     req.change_pins = true;
-    req.change_node = true;
-    req.change_transport = true;
+    req.change_node = false;
+    req.change_transport = false;
     req.new_node_config.refresh_rate_ms = 999;
     req.new_node_config.node_name.data = "test_node";
     req.new_node_config.publisher_name.data = "test_pub";

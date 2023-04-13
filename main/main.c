@@ -45,15 +45,53 @@
 //        vTaskDelay(1000/ portTICK_PERIOD_MS);
 //    }
 //}
+//
+//
 
-void run() {
-    board_init();
-    node_init();
+
+enum states {
+    STATE_TRANSPORT_INIT,
+    STATE_PING,
+    STATE_NODE_INIT,
+    STATE_RUN,
+    STATE_SHUTDOWN,
+} state;
+
+void run_state_machine() {
+    board_init(); 
+
+    while (1) {
+        switch (state) {
+            case STATE_TRANSPORT_INIT:
+                state = node_transport_init() ? STATE_PING : STATE_TRANSPORT_INIT;
+                break;
+            case STATE_PING:
+                state = node_ping_agent() ? STATE_NODE_INIT : STATE_PING;
+                //state = STATE_NODE_INIT;
+                break;
+            case STATE_NODE_INIT:
+                state = node_init() ? STATE_RUN : STATE_PING;
+                break;
+            case STATE_RUN:
+                node_run();
+                state = STATE_SHUTDOWN;
+                break;
+            case STATE_SHUTDOWN:
+                node_shutdown();
+                state = STATE_PING;
+                break;
+            default:
+                state = STATE_TRANSPORT_INIT;
+                break;
+        }
+
+    }
+
     vTaskDelete(NULL);
 }
 
 void app_main(void) {
-    xTaskCreate(run, "uros_task", CONFIG_MICRO_ROS_APP_STACK, NULL, 
+    xTaskCreate(run_state_machine, "uros_task", CONFIG_MICRO_ROS_APP_STACK, NULL, 
         CONFIG_MICRO_ROS_APP_TASK_PRIO, NULL);
     //test_board();
 }

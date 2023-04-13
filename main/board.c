@@ -48,11 +48,13 @@ void call_pin_functions(double vals[NUM_PINS], pin_mode_directions_t mode_dir) {
 }
 
 void board_read(double vals_out[NUM_PINS]) {
+    printf(">>> Board read\n");
     call_pin_functions(vals_out, INPUT);
 }
 
 
 void board_write(double vals_in[NUM_PINS]) {
+    printf(">>> Board write\n");
     call_pin_functions(vals_in, OUTPUT);
 }
 
