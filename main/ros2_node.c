@@ -11,6 +11,7 @@
 
 #include "ros2_node.h"
 //#include "sdkconfig.h"
+#include <std_msgs/msg/int32.h>
 
 #define RCCHECK(fn) {\
     rcl_ret_t err = fn;\
@@ -23,7 +24,15 @@
     }\
 }
 
-pin_values_t recv_msg;
+#define EXECUTE_EVERY_N_MS(MS, X)  do { \
+  static volatile int64_t init = -1; \
+  if (init == -1) { init = uxr_millis();} \
+  if (uxr_millis() - init > MS) { X; init = uxr_millis();} \
+} while (0)\
+
+
+pin_values_t pub_msg;
+pin_values_t sub_msg;
 
 bool node_shutdown() {
     RCCHECK(rcl_subscription_fini(&board.subscriber, &board.node));
@@ -42,12 +51,14 @@ void handle_write_pins(const void *msgin) {
 
 void handle_read_pins(rcl_timer_t *timer, int64_t last_call_time) {
     printf(">>> Read pins\n");
+
     (void)last_call_time;
 
     if (timer != NULL) {
-        pin_values_t msg;
-        board_read(&msg.values);
-        rcl_ret_t err = rcl_publish(&board.publisher, &msg, NULL);
+        board_read(&pub_msg.values);
+        rcl_ret_t err = rcl_publish(&board.publisher, &pub_msg, NULL);
+        //int_msg.data = 10;
+        //rcl_ret_t err = rcl_publish(&board.publisher, &int_msg, NULL);
         board.node_error = err;
     }
 }
@@ -63,7 +74,7 @@ void handle_set_config(const void *msg_req, void *msg_rsp) {
     bool change_node = (bool) request->change_node;
     bool change_transport = (bool) request->change_transport;
 
-    //pthread_rwlock_wrlock(&board.lock);
+    pthread_rwlock_wrlock(&board.lock);
 
     if (change_pins) {
         printf(">>> Changing pins\n");
@@ -103,7 +114,7 @@ void handle_set_config(const void *msg_req, void *msg_rsp) {
         board.node_error = err;
     }
 
-    //pthread_rwlock_unlock(&board.lock);
+    pthread_rwlock_unlock(&board.lock);
 
     printf(">>> Generating config response\n");
     for (int i=0; i<NUM_PINS; i++) {
@@ -135,13 +146,14 @@ bool node_transport_init() {
 
 bool node_ping_agent() {
     printf(">>> Ping agent\n");
+    return true;
     return rmw_uros_ping_agent(1000, 3) == RMW_RET_OK;
 }
 
 bool node_init() {
     printf(">>> Init node\n");
 
-    usleep(1e7);
+    usleep(1e6);
 
     printf(">>> Init options\n");
 	rcl_allocator_t allocator = rcl_get_default_allocator();
@@ -159,6 +171,9 @@ bool node_init() {
     
     printf(">>> Init support\n");
 	RCCHECK(rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator));
+    
+    //RCCHECK(rclc_support_init(&support, 0, NULL, &allocator));
+
 
     // --- Create node ---
 
@@ -169,40 +184,39 @@ bool node_init() {
     //
     printf(">>> Init executor\n");
     board.executor = rclc_executor_get_zero_initialized_executor();
-    RCCHECK(rclc_executor_init(&board.executor, &support.context, 3, &allocator));
+    RCCHECK(rclc_executor_init(&board.executor, &support.context, 1, &allocator));
     //unsigned int rcl_wait_timeout = board.refresh_rate_ms; // in ms
     unsigned int rcl_wait_timeout = 1000;
     RCCHECK(rclc_executor_set_timeout(&board.executor, RCL_MS_TO_NS(rcl_wait_timeout)));
 
     // --- Create publisher ---
 
-    printf(">>> Init publisher\n");
-    RCCHECK(rclc_publisher_init_best_effort(
-        &board.publisher, 
-        &board.node, 
-        ROSIDL_GET_MSG_TYPE_SUPPORT(ros2_esp32_interfaces, msg, PinValues),
-        board.publisher_name
-    ));
-
+    //printf(">>> Init publisher\n");
+    //RCCHECK(rclc_publisher_init_best_effort(
+    //    &board.publisher,
+    //    &board.node, 
+    //    ROSIDL_GET_MSG_TYPE_SUPPORT(ros2_esp32_interfaces, msg, PinValues),
+    //    board.publisher_name
+    //));
 
     // --- Create subscriber ---
     
-    //printf(">>> Init subscriber\n");
-    //RCCHECK(rclc_subscription_init_best_effort(
-    //    &board.subscriber, 
-    //    &board.node, 
-    //    ROSIDL_GET_MSG_TYPE_SUPPORT(ros2_esp32_interfaces, msg, PinValues),
-    //    board.subscriber_name
-    //));
+    printf(">>> Init subscriber\n");
+    RCCHECK(rclc_subscription_init_best_effort(
+        &board.subscriber, 
+        &board.node, 
+        ROSIDL_GET_MSG_TYPE_SUPPORT(ros2_esp32_interfaces, msg, PinValues),
+        board.subscriber_name
+    ));
 
-    //// Add subscriber to executor
-    //RCCHECK(rclc_executor_add_subscription(
-    //    &board.executor,
-    //    &board.subscriber,
-    //    &recv_msg,
-    //    &handle_write_pins,
-    //    ON_NEW_DATA
-    //));
+     // Add subscriber to executor
+     RCCHECK(rclc_executor_add_subscription(
+         &board.executor,
+         &board.subscriber,
+         &sub_msg,
+         handle_write_pins,
+         ON_NEW_DATA
+     ));
 
     // --- Create service ---
     
@@ -229,7 +243,7 @@ bool node_init() {
     // --- Create timer ---
 
     printf(">>> Init timer\n");
-    rcl_timer_t timer = rcl_get_zero_initialized_timer();
+    rcl_timer_t timer;// = rcl_get_zero_initialized_timer();
     const unsigned int timer_timeout = 1000; //= board.refresh_rate_ms;
     RCCHECK(rclc_timer_init_default(
         &timer, 
@@ -238,19 +252,19 @@ bool node_init() {
         handle_read_pins
     ));
     // Add timer and subscriber to executor.
-    RCCHECK(rclc_executor_add_timer(&board.executor, &timer));
+    //RCCHECK(rclc_executor_add_timer(&board.executor, &timer));
 
     return true;
 }
 
 void node_run() {
     printf(">>> Enter run mode\n");
-    //rclc_executor_spin(&board.executor);
-    //while(1){
-    //    usleep(1000);
-    //}
+    rmw_ret_t status = RMW_RET_OK;
     while (1) {
-        rclc_executor_spin_some(&board.executor, RCL_MS_TO_NS(8000));
-       //usleep(100);
+        EXECUTE_EVERY_N_MS(1000, status = rmw_uros_ping_agent(100, 1););
+        if (status != RMW_RET_OK) return;
+        rclc_executor_spin_some(&board.executor, RCL_MS_TO_NS(1000));
+        usleep(100);
     }
 }
+

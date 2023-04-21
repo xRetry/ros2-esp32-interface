@@ -1,0 +1,10 @@
+{
+    "names": {
+        "microxrcedds_client": {
+            "cmake-args": [
+                "-DUCLIENT_HARD_LIVELINESS_CHECK=ON",
+                "-DUCLIENT_HARD_LIVELINESS_CHECK_TIMEOUT=5000"
+            ]
+        }
+    }
+}
