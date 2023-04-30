@@ -53,8 +53,6 @@ enum states {
     STATE_TRANSPORT_INIT,
     STATE_PING,
     STATE_NODE_INIT,
-    STATE_RUN,
-    STATE_SHUTDOWN,
 } state;
 
 void run_state_machine() {
@@ -70,14 +68,7 @@ void run_state_machine() {
                 //state = STATE_NODE_INIT;
                 break;
             case STATE_NODE_INIT:
-                state = node_init() ? STATE_RUN : STATE_PING;
-                break;
-            case STATE_RUN:
-                node_run();
-                state = STATE_SHUTDOWN;
-                break;
-            case STATE_SHUTDOWN:
-                node_shutdown();
+                node_init();
                 state = STATE_PING;
                 break;
             default:

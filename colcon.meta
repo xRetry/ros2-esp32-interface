@@ -5,6 +5,11 @@
                 "-DUCLIENT_HARD_LIVELINESS_CHECK=ON",
                 "-DUCLIENT_HARD_LIVELINESS_CHECK_TIMEOUT=5000"
             ]
+        },
+        "rcl": {
+            "cmake-args": [
+                "-RCL_LOGGING_ENABLED=ON"
+            ]
         }
     }
 }

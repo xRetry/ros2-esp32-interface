@@ -1,3 +1,4 @@
+#include <init.h>
 #include <rcl/time.h>
 #include <rcl/types.h>
 #include <rcl/allocator.h>
@@ -10,17 +11,16 @@
 #include <unistd.h>
 
 #include "ros2_node.h"
-//#include "sdkconfig.h"
 #include <std_msgs/msg/int32.h>
 
-#define RCCHECK(fn) {\
+#define OK_OR_CLEANUP(fn) {\
     rcl_ret_t err = fn;\
     if ((err != RCL_RET_OK)) {\
         printf("Failed status on line %d: %d.\n",\
             __LINE__, (int) err\
         );\
         board.node_error = err;\
-        return false;\
+        goto cleanup;\
     }\
 }
 
@@ -33,14 +33,8 @@
 
 pin_values_t pub_msg;
 pin_values_t sub_msg;
+rcl_publisher_t publisher;
 
-bool node_shutdown() {
-    RCCHECK(rcl_subscription_fini(&board.subscriber, &board.node));
-    RCCHECK(rcl_publisher_fini(&board.publisher, &board.node));
-    RCCHECK(rcl_service_fini(&board.service, &board.node));
-    RCCHECK(rcl_node_fini(&board.node));
-    return true;
-}
 
 void handle_write_pins(const void *msgin) {
     printf(">>> Write pins\n");
@@ -56,7 +50,7 @@ void handle_read_pins(rcl_timer_t *timer, int64_t last_call_time) {
 
     if (timer != NULL) {
         board_read(&pub_msg.values);
-        rcl_ret_t err = rcl_publish(&board.publisher, &pub_msg, NULL);
+        rcl_ret_t err = rcl_publish(&publisher, &pub_msg, NULL);
         //int_msg.data = 10;
         //rcl_ret_t err = rcl_publish(&board.publisher, &int_msg, NULL);
         board.node_error = err;
@@ -160,59 +154,62 @@ bool node_init() {
 	rclc_support_t support;
 
 	rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
-	RCCHECK(rcl_init_options_init(&init_options, allocator));
+	OK_OR_CLEANUP(rcl_init_options_init(&init_options, allocator));
 
     printf(">>> Init RMW\n");
 	rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(&init_options);
 
 	// Static Agent IP and port can be used instead of autodisvery.
-	RCCHECK(rmw_uros_options_set_udp_address(board.agent_ip, board.agent_port, rmw_options));
+	OK_OR_CLEANUP(rmw_uros_options_set_udp_address(board.agent_ip, board.agent_port, rmw_options));
 	//RCCHECK(rmw_uros_discover_agent(rmw_options));
     
     printf(">>> Init support\n");
-	RCCHECK(rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator));
-    
+	OK_OR_CLEANUP(rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator));
+
     //RCCHECK(rclc_support_init(&support, 0, NULL, &allocator));
 
 
     // --- Create node ---
 
     printf(">>> Init node\n");
-    RCCHECK(rclc_node_init_default(&board.node, board.node_name, "", &support));
+    rcl_node_t node;
+    OK_OR_CLEANUP(rclc_node_init_default(&node, board.node_name, "", &support));
 
     // --- Create executor ---
     //
     printf(">>> Init executor\n");
-    board.executor = rclc_executor_get_zero_initialized_executor();
-    RCCHECK(rclc_executor_init(&board.executor, &support.context, 1, &allocator));
+    rclc_executor_t executor = rclc_executor_get_zero_initialized_executor();
+    rcl_context_t context;
+    OK_OR_CLEANUP(rclc_executor_init(&executor, &context, 1, &allocator));
     //unsigned int rcl_wait_timeout = board.refresh_rate_ms; // in ms
-    unsigned int rcl_wait_timeout = 1000;
-    RCCHECK(rclc_executor_set_timeout(&board.executor, RCL_MS_TO_NS(rcl_wait_timeout)));
+    //unsigned int rcl_wait_timeout = 1000;
+    //RCCHECK(rclc_executor_set_timeout(&board.executor, RCL_MS_TO_NS(rcl_wait_timeout)));
 
     // --- Create publisher ---
 
-    //printf(">>> Init publisher\n");
-    //RCCHECK(rclc_publisher_init_best_effort(
-    //    &board.publisher,
-    //    &board.node, 
-    //    ROSIDL_GET_MSG_TYPE_SUPPORT(ros2_esp32_interfaces, msg, PinValues),
-    //    board.publisher_name
-    //));
+    printf(">>> Init publisher\n");
+    OK_OR_CLEANUP(rclc_publisher_init_best_effort(
+        &publisher,
+        &node, 
+        ROSIDL_GET_MSG_TYPE_SUPPORT(ros2_esp32_interfaces, msg, PinValues),
+        board.publisher_name
+    ));
 
     // --- Create subscriber ---
     
     printf(">>> Init subscriber\n");
-    RCCHECK(rclc_subscription_init_best_effort(
-        &board.subscriber, 
-        &board.node, 
+    rcl_subscription_t subscriber = rcl_get_zero_initialized_subscription();
+    OK_OR_CLEANUP(rclc_subscription_init_best_effort(
+        &subscriber, 
+        &node, 
         ROSIDL_GET_MSG_TYPE_SUPPORT(ros2_esp32_interfaces, msg, PinValues),
         board.subscriber_name
     ));
 
      // Add subscriber to executor
-     RCCHECK(rclc_executor_add_subscription(
-         &board.executor,
-         &board.subscriber,
+     OK_OR_CLEANUP(rclc_executor_add_subscription(
+         &executor,
+         &subscriber,
          &sub_msg,
          handle_write_pins,
          ON_NEW_DATA
@@ -243,28 +240,47 @@ bool node_init() {
     // --- Create timer ---
 
     printf(">>> Init timer\n");
-    rcl_timer_t timer;// = rcl_get_zero_initialized_timer();
-    const unsigned int timer_timeout = 1000; //= board.refresh_rate_ms;
-    RCCHECK(rclc_timer_init_default(
+    rcl_timer_t timer  = rcl_get_zero_initialized_timer();
+    //const unsigned int timer_timeout = board.refresh_rate_ms;
+    const unsigned int timer_timeout = 500;
+    OK_OR_CLEANUP(rclc_timer_init_default(
         &timer, 
         &support, 
         RCL_MS_TO_NS(timer_timeout),
         handle_read_pins
     ));
     // Add timer and subscriber to executor.
-    //RCCHECK(rclc_executor_add_timer(&board.executor, &timer));
+    OK_OR_CLEANUP(rclc_executor_add_timer(&executor, &timer));
 
-    return true;
-}
+    // --- Run node ---
+    
+    printf(">>> Run node\n");
+    //rmw_ret_t status = RMW_RET_OK;
+    //while (1) {
+    //    EXECUTE_EVERY_N_MS(1000, status = rmw_uros_ping_agent(100, 1););
+    //    if (status != RMW_RET_OK) goto cleanup;
+    //    rcl_ret_t err = rclc_executor_spin_some(&executor, 100);
+    //    printf("error: %d\n", err);
+    //    //printf("%d\n", rcl_context_is_valid(board.executor.context));
+    //    break;
 
-void node_run() {
-    printf(">>> Enter run mode\n");
-    rmw_ret_t status = RMW_RET_OK;
-    while (1) {
-        EXECUTE_EVERY_N_MS(1000, status = rmw_uros_ping_agent(100, 1););
-        if (status != RMW_RET_OK) return;
-        rclc_executor_spin_some(&board.executor, RCL_MS_TO_NS(1000));
-        usleep(100);
+    //    usleep(500);
+    //    //printf("after sleep: %d\n", rcl_context_is_valid(board.executor.context));
+    //}
+    rclc_executor_spin(&executor);
+
+cleanup:
+    // TODO: Only cleanup initialized parts
+    {
+        printf(">>> Cleanup node\n");
+        rcl_ret_t err = RCL_RET_OK;
+        err += rclc_executor_fini(&executor);
+        err += rcl_subscription_fini(&subscriber, &node);
+        err += rcl_publisher_fini(&publisher, &node);
+        //RCCHECK(rcl_service_fini(&service, &node));
+        err += rcl_node_fini(&node);
+        err += rclc_support_fini(&support);
+        return err == RCL_RET_OK;
     }
 }
 

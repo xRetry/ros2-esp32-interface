@@ -55,11 +55,6 @@ typedef struct {
     esp_err_t (*pin_functions[NUM_PINS])(uint8_t, double*);
     adc1_channel_t adc_handles[NUM_PINS];
     pthread_rwlock_t lock;
-    rclc_executor_t executor;
-    rcl_node_t node;
-    rcl_subscription_t subscriber;
-    rcl_publisher_t publisher;
-    rcl_service_t service;
     esp_err_t pin_errors[NUM_PINS];
     rcl_ret_t node_error;
     rcl_ret_t transport_error;
