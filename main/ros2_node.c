@@ -33,8 +33,32 @@
 
 pin_values_t pub_msg;
 pin_values_t sub_msg;
+rcl_node_t node;
+rclc_executor_t executor;
+rcl_subscription_t subscriber;
 rcl_publisher_t publisher;
+rcl_service_t service;
+rclc_support_t support;
 
+bool is_exec_init = false;
+bool is_pub_init = false;
+bool is_sub_init = false;
+bool is_service_init = false;
+bool is_node_init = false;
+bool is_supp_init = false;
+
+rcl_ret_t node_shutdown() {
+    printf(">>> Cleanup node\n");
+    rcl_ret_t err = RCL_RET_OK;
+
+    if (is_exec_init) err += rclc_executor_fini(&executor);
+    if (is_sub_init) err += rcl_subscription_fini(&subscriber, &node);
+    if (is_pub_init) err += rcl_publisher_fini(&publisher, &node);
+    if (is_service_init) err += rcl_service_fini(&service, &node);
+    if (is_node_init) err += rcl_node_fini(&node);
+    if (is_supp_init) err += rclc_support_fini(&support);
+    return err == RCL_RET_OK;
+}
 
 void handle_write_pins(const void *msgin) {
     printf(">>> Write pins\n");
@@ -147,11 +171,17 @@ bool node_ping_agent() {
 bool node_init() {
     printf(">>> Init node\n");
 
-    usleep(1e6);
+    is_exec_init = false;
+    is_pub_init = false;
+    is_sub_init = false;
+    is_service_init = false;
+    is_node_init = false;
+    is_supp_init = false;
+
+    usleep(1e6); // TODO: Remove
 
     printf(">>> Init options\n");
 	rcl_allocator_t allocator = rcl_get_default_allocator();
-	rclc_support_t support;
 
 	rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
 	OK_OR_CLEANUP(rcl_init_options_init(&init_options, allocator));
@@ -165,25 +195,21 @@ bool node_init() {
     
     printf(">>> Init support\n");
 	OK_OR_CLEANUP(rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator));
-
-    //RCCHECK(rclc_support_init(&support, 0, NULL, &allocator));
-
+    is_supp_init = true;
 
     // --- Create node ---
 
     printf(">>> Init node\n");
-    rcl_node_t node;
     OK_OR_CLEANUP(rclc_node_init_default(&node, board.node_name, "", &support));
+    is_node_init = true;
 
     // --- Create executor ---
     //
     printf(">>> Init executor\n");
-    rclc_executor_t executor = rclc_executor_get_zero_initialized_executor();
+    executor = rclc_executor_get_zero_initialized_executor();
     rcl_context_t context;
-    OK_OR_CLEANUP(rclc_executor_init(&executor, &context, 1, &allocator));
-    //unsigned int rcl_wait_timeout = board.refresh_rate_ms; // in ms
-    //unsigned int rcl_wait_timeout = 1000;
-    //RCCHECK(rclc_executor_set_timeout(&board.executor, RCL_MS_TO_NS(rcl_wait_timeout)));
+    OK_OR_CLEANUP(rclc_executor_init(&executor, &context, 3, &allocator));
+    is_exec_init = true;
 
     // --- Create publisher ---
 
@@ -194,17 +220,19 @@ bool node_init() {
         ROSIDL_GET_MSG_TYPE_SUPPORT(ros2_esp32_interfaces, msg, PinValues),
         board.publisher_name
     ));
+    is_pub_init = true;
 
     // --- Create subscriber ---
     
     printf(">>> Init subscriber\n");
-    rcl_subscription_t subscriber = rcl_get_zero_initialized_subscription();
+    subscriber = rcl_get_zero_initialized_subscription();
     OK_OR_CLEANUP(rclc_subscription_init_best_effort(
         &subscriber, 
         &node, 
         ROSIDL_GET_MSG_TYPE_SUPPORT(ros2_esp32_interfaces, msg, PinValues),
         board.subscriber_name
     ));
+    is_sub_init = true;
 
      // Add subscriber to executor
      OK_OR_CLEANUP(rclc_executor_add_subscription(
@@ -217,32 +245,33 @@ bool node_init() {
 
     // --- Create service ---
     
-    //printf(">>> Init service\n");
-    //RCCHECK(rclc_service_init_default(
-    //    &board.service, 
-    //    &board.node,
-    //    ROSIDL_GET_SRV_TYPE_SUPPORT(ros2_esp32_interfaces, srv, SetConfig), 
-    //    "test"//board.service_name
-    //));
-    //
-    //set_config_req_t set_pin_req;
-    //set_config_rsp_t set_pin_rsp;
+    printf(">>> Init service\n");
+    rcl_service_t service;
+    OK_OR_CLEANUP(rclc_service_init_default(
+        &service, 
+        &node,
+        ROSIDL_GET_SRV_TYPE_SUPPORT(ros2_esp32_interfaces, srv, SetConfig), 
+        board.service_name
+    ));
 
-    //// Add service to executor
-    //RCCHECK(rclc_executor_add_service(
-    //    &board.executor, 
-    //    &board.service, 
-    //    &set_pin_req, 
-    //    &set_pin_rsp, 
-    //    &handle_set_config
-    //));
+    
+    set_config_req_t set_pin_req;
+    set_config_rsp_t set_pin_rsp;
+
+    // Add service to executor
+    OK_OR_CLEANUP(rclc_executor_add_service(
+        &executor, 
+        &service, 
+        &set_pin_req, 
+        &set_pin_rsp, 
+        &handle_set_config
+    ));
 
     // --- Create timer ---
 
     printf(">>> Init timer\n");
     rcl_timer_t timer  = rcl_get_zero_initialized_timer();
-    //const unsigned int timer_timeout = board.refresh_rate_ms;
-    const unsigned int timer_timeout = 500;
+    const unsigned int timer_timeout = board.refresh_rate_ms;
     OK_OR_CLEANUP(rclc_timer_init_default(
         &timer, 
         &support, 
@@ -270,17 +299,8 @@ bool node_init() {
     rclc_executor_spin(&executor);
 
 cleanup:
-    // TODO: Only cleanup initialized parts
-    {
-        printf(">>> Cleanup node\n");
-        rcl_ret_t err = RCL_RET_OK;
-        err += rclc_executor_fini(&executor);
-        err += rcl_subscription_fini(&subscriber, &node);
-        err += rcl_publisher_fini(&publisher, &node);
-        //RCCHECK(rcl_service_fini(&service, &node));
-        err += rcl_node_fini(&node);
-        err += rclc_support_fini(&support);
-        return err == RCL_RET_OK;
-    }
+    return node_shutdown();
 }
+
+
 
