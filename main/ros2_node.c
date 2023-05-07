@@ -10,6 +10,7 @@
 #include <rmw_microros/rmw_microros.h>
 #include <unistd.h>
 
+#include "modes.h"
 #include "ros2_node.h"
 #include <std_msgs/msg/int32.h>
 
@@ -75,8 +76,6 @@ void handle_read_pins(rcl_timer_t *timer, int64_t last_call_time) {
     if (timer != NULL) {
         board_read(&pub_msg.values);
         rcl_ret_t err = rcl_publish(&publisher, &pub_msg, NULL);
-        //int_msg.data = 10;
-        //rcl_ret_t err = rcl_publish(&board.publisher, &int_msg, NULL);
         board.node_error = err;
     }
 }
@@ -87,50 +86,62 @@ void handle_set_config(const void *msg_req, void *msg_rsp) {
     set_config_req_t * request = (set_config_req_t *) msg_req;
     set_config_rsp_t * response = (set_config_rsp_t *) msg_rsp;
 
-
-    bool change_pins = (bool) request->change_pins;
-    bool change_node = (bool) request->change_node;
-    bool change_transport = (bool) request->change_transport;
+    bool change_pins = request->change_pins;
+    bool change_node = request->change_node;
+    bool change_transport = request->change_transport;
+    printf("cp: %d, cn: %d, ct: %d\n", change_pins, change_node, change_transport);
+    for (int i=0; i<NUM_PINS; i++) {
+        printf("pin: %d, mode: %d\n", i, request->new_pin_config.pin_modes[i]);
+    }
 
     pthread_rwlock_wrlock(&board.lock);
 
     if (change_pins) {
         printf(">>> Changing pins\n");
-        pin_config_t *pin_config =  &request->new_pin_config;
-        board_set_pins(pin_config);
+        pin_config_t pin_config =  request->new_pin_config;
+        board_set_pins(pin_config.pin_modes);
     }
 
-    if (change_node) {
-        printf(">>> Changing node\n");
-        node_config_t *node_config = &request->new_node_config;
-        board.refresh_rate_ms = node_config->refresh_rate_ms;
-        board.node_name = node_config->node_name.data;
-        board.publisher_name = node_config->publisher_name.data;
-        board.subscriber_name = node_config->subscriber_name.data;
-        board.service_name = node_config->service_name.data;
-    }
+    //if (change_node) {
+    //    printf(">>> Changing node\n");
+    //    node_config_t *node_config = &request->new_node_config;
+    //    board.refresh_rate_ms = node_config->refresh_rate_ms;
+    //    board.node_name = node_config->node_name.data;
+    //    board.publisher_name = node_config->publisher_name.data;
+    //    board.subscriber_name = node_config->subscriber_name.data;
+    //    board.service_name = node_config->service_name.data;
+    //}
 
-    if (change_transport) {
-        printf(">>> Changing transport\n");
-        transport_config_t *transport_config = &request->new_transport_config;
-        board.use_wifi = transport_config->use_wifi;
-        board.agent_ip = transport_config->agent_ip.data;
-        board.agent_port = transport_config->agent_port.data;
-        board.wifi_ssid = transport_config->wifi_ssid.data;
-        board.wifi_pw = transport_config->wifi_pw.data;
-    }
+    //if (change_transport) {
+    //    printf(">>> Changing transport\n");
+    //    transport_config_t *transport_config = &request->new_transport_config;
+    //    transport_config_t transport_config2 = request->new_transport_config;
+    //    board.use_wifi = transport_config2.use_wifi;
+    //    printf("%d\n", board.use_wifi);
+    //    free(board.agent_ip);
+    //    printf("%s\n", transport_config2.agent_ip.data);
+    //    board.agent_ip = strdup(transport_config->agent_ip.data);
+    //    free(board.agent_port);
+    //    board.agent_port = strdup(transport_config->agent_port.data);
+    //    free(board.wifi_ssid);
+    //    board.wifi_ssid = strdup(transport_config->wifi_ssid.data);
+    //    free(board.wifi_pw);
+    //    board.wifi_pw = strdup(transport_config->wifi_pw.data);
+    //}
 
-    if (change_node || change_transport) {
-        printf(">>> Node shutdown\n");
+    //if (change_node || change_transport) {
+    //    printf(">>> Node shutdown\n");
 
-        // NOTE: This will stop the node and therefore current thread.
-        // Afterwards the node will restart automatically.
-        // A response will never be sended.
-        rcl_ret_t err = node_shutdown();
+    //    // NOTE: This will stop the node and therefore current thread.
+    //    // Afterwards the node will restart automatically.
+    //    // A response will never be sended.
+    //    rcl_ret_t err = node_shutdown();
 
-        printf(">>> Node shutdown failed\n");
-        board.node_error = err;
-    }
+    //    printf(">>> Node shutdown failed\n");
+    //    board.node_error = err;
+    //    pthread_rwlock_unlock(&board.lock);
+    //    return;
+    //}
 
     pthread_rwlock_unlock(&board.lock);
 
@@ -139,19 +150,23 @@ void handle_set_config(const void *msg_req, void *msg_rsp) {
         response->active_pin_config.pin_modes[i] = board.pin_modes[i];
         response->pin_error[i] = board.pin_errors[i];
     }
-    response->active_node_config.refresh_rate_ms = board.refresh_rate_ms;
-    response->active_node_config.node_name.data = board.node_name;
-    response->active_node_config.publisher_name.data = board.publisher_name;
-    response->active_node_config.subscriber_name.data = board.subscriber_name;
-    response->active_node_config.service_name.data = board.service_name;
-    response->node_error = board.node_error;
+    for (int i=0; i<NUM_PINS; i++) {
+        printf("pin_nr: %d\nmode: %d\nerr: %d\n", 
+               i, response->active_pin_config.pin_modes[i], response->pin_error[i]);
+    }
+    //response->active_node_config.refresh_rate_ms = board.refresh_rate_ms;
+    //response->active_node_config.node_name.data = board.node_name;
+    //response->active_node_config.publisher_name.data = board.publisher_name;
+    //response->active_node_config.subscriber_name.data = board.subscriber_name;
+    //response->active_node_config.service_name.data = board.service_name;
+    //response->node_error = board.node_error;
 
-    response->active_transport_config.use_wifi = board.use_wifi;
-    response->active_transport_config.agent_ip.data = board.agent_ip;
-    response->active_transport_config.agent_port.data = board.agent_port;
-    response->active_transport_config.wifi_ssid.data = board.wifi_ssid;
-    response->active_transport_config.wifi_pw.data = board.wifi_pw;
-    response->transport_error = board.transport_error;
+    //response->active_transport_config.use_wifi = board.use_wifi;
+    //response->active_transport_config.agent_ip.data = board.agent_ip;
+    //response->active_transport_config.agent_port.data = board.agent_port;
+    //response->active_transport_config.wifi_ssid.data = board.wifi_ssid;
+    //response->active_transport_config.wifi_pw.data = board.wifi_pw;
+    //response->transport_error = board.transport_error;
 }
 
 bool node_transport_init() {
@@ -188,6 +203,8 @@ bool node_init() {
 
     printf(">>> Init RMW\n");
 	rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(&init_options);
+
+    printf("%s:%s\n", board.agent_ip, board.agent_port);
 
 	// Static Agent IP and port can be used instead of autodisvery.
 	OK_OR_CLEANUP(rmw_uros_options_set_udp_address(board.agent_ip, board.agent_port, rmw_options));

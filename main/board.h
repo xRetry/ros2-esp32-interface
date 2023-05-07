@@ -11,7 +11,7 @@ void board_write(double vals_in[NUM_PINS]);
 
 void board_read(double vals_out[NUM_PINS]);
 
-void board_set_pins(pin_config_t *pin_config);
+void board_set_pins(uint8_t pin_config[NUM_PINS]);
 
 #endif // BOARD_H_
 

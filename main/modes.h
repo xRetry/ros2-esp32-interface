@@ -7,10 +7,10 @@
 #include "driver/dac.h"
 #include <ros2_esp32_interfaces/msg/detail/pin_config__functions.h>
 #include <ros2_esp32_interfaces/msg/detail/pin_config__struct.h>
-#include <ros2_esp32_interfaces/msg/detail/node_config__functions.h>
-#include <ros2_esp32_interfaces/msg/detail/node_config__struct.h>
-#include <ros2_esp32_interfaces/msg/detail/transport_config__functions.h>
-#include <ros2_esp32_interfaces/msg/detail/transport_config__struct.h>
+//#include <ros2_esp32_interfaces/msg/detail/node_config__functions.h>
+//#include <ros2_esp32_interfaces/msg/detail/node_config__struct.h>
+//#include <ros2_esp32_interfaces/msg/detail/transport_config__functions.h>
+//#include <ros2_esp32_interfaces/msg/detail/transport_config__struct.h>
 #include <ros2_esp32_interfaces/msg/pin_values.h>
 #include <ros2_esp32_interfaces/msg/pin_config.h>
 #include <ros2_esp32_interfaces/srv/set_config.h>
@@ -23,8 +23,8 @@ typedef ros2_esp32_interfaces__srv__SetConfig_Request set_config_req_t;
 typedef ros2_esp32_interfaces__srv__SetConfig_Response set_config_rsp_t;
 typedef ros2_esp32_interfaces__msg__PinValues pin_values_t;
 typedef ros2_esp32_interfaces__msg__PinConfig pin_config_t;
-typedef ros2_esp32_interfaces__msg__NodeConfig node_config_t;
-typedef ros2_esp32_interfaces__msg__TransportConfig transport_config_t;
+//typedef ros2_esp32_interfaces__msg__NodeConfig node_config_t;
+//typedef ros2_esp32_interfaces__msg__TransportConfig transport_config_t;
 
 typedef enum pin_mode_directions_t {
     DISABLED,
@@ -33,11 +33,11 @@ typedef enum pin_mode_directions_t {
 } pin_mode_directions_t;
 
 typedef enum pin_mode_t {
-    MODE_DISABLED = ros2_esp32_interfaces__msg__PinConfig__MODE_DISABLED,
-    MODE_DIGITAL_INPUT = ros2_esp32_interfaces__msg__PinConfig__MODE_DIGITAL_INPUT, 
-    MODE_DIGITAL_OUTPUT = ros2_esp32_interfaces__msg__PinConfig__MODE_DIGITAL_OUTPUT,
-    MODE_ANALOG_INPUT = ros2_esp32_interfaces__msg__PinConfig__MODE_ANALOG_INPUT,
-    MODE_ANALOG_OUTPUT = ros2_esp32_interfaces__msg__PinConfig__MODE_ANALOG_OUTPUT,
+    MODE_DISABLED = 0,
+    MODE_DIGITAL_INPUT = 1,
+    MODE_DIGITAL_OUTPUT = 2,
+    MODE_ANALOG_INPUT = 3,
+    MODE_ANALOG_OUTPUT = 4,
 } pin_mode_t;
 
 typedef struct {

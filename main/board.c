@@ -58,9 +58,11 @@ void board_write(double vals_in[NUM_PINS]) {
     call_pin_functions(vals_in, OUTPUT);
 }
 
-void board_set_pins(pin_config_t *pin_config) {
+void board_set_pins(uint8_t pin_modes[NUM_PINS]) {
     for (int pin_nr=0; pin_nr<NUM_PINS; pin_nr++) {
-        pin_mode_t new_pin_mode = pin_config->pin_modes[pin_nr];
+        if (pin_nr == 7 || pin_nr == 8 || pin_nr == 11) continue;
+
+        pin_mode_t new_pin_mode = pin_modes[pin_nr];
         board.pin_errors[pin_nr] = PIN_MODE_FUNCTIONS[new_pin_mode](pin_nr);
         if (board.pin_errors[pin_nr] == ESP_OK) {
             board.pin_modes[pin_nr] = new_pin_mode;
