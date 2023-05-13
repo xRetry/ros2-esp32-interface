@@ -5,14 +5,14 @@
 #include "driver/adc.h"
 #include "esp_adc_cal.h"
 #include "driver/dac.h"
-#include <ros2_esp32_interfaces/msg/detail/pin_config__functions.h>
-#include <ros2_esp32_interfaces/msg/detail/pin_config__struct.h>
+//#include <ros2_esp32_interfaces/msg/detail/pin_config__functions.h>
+//#include <ros2_esp32_interfaces/msg/detail/pin_config__struct.h>
 //#include <ros2_esp32_interfaces/msg/detail/node_config__functions.h>
 //#include <ros2_esp32_interfaces/msg/detail/node_config__struct.h>
 //#include <ros2_esp32_interfaces/msg/detail/transport_config__functions.h>
 //#include <ros2_esp32_interfaces/msg/detail/transport_config__struct.h>
 #include <ros2_esp32_interfaces/msg/pin_values.h>
-#include <ros2_esp32_interfaces/msg/pin_config.h>
+//#include <ros2_esp32_interfaces/msg/pin_config.h>
 #include <ros2_esp32_interfaces/srv/set_config.h>
 #include <ros2_esp32_interfaces/srv/detail/set_config__functions.h>
 #include <rclc/executor.h>
@@ -22,7 +22,7 @@
 typedef ros2_esp32_interfaces__srv__SetConfig_Request set_config_req_t;
 typedef ros2_esp32_interfaces__srv__SetConfig_Response set_config_rsp_t;
 typedef ros2_esp32_interfaces__msg__PinValues pin_values_t;
-typedef ros2_esp32_interfaces__msg__PinConfig pin_config_t;
+//typedef ros2_esp32_interfaces__msg__PinConfig pin_config_t;
 //typedef ros2_esp32_interfaces__msg__NodeConfig node_config_t;
 //typedef ros2_esp32_interfaces__msg__TransportConfig transport_config_t;
 
