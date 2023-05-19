@@ -5,14 +5,7 @@
 #include "driver/adc.h"
 #include "esp_adc_cal.h"
 #include "driver/dac.h"
-//#include <ros2_esp32_interfaces/msg/detail/pin_config__functions.h>
-//#include <ros2_esp32_interfaces/msg/detail/pin_config__struct.h>
-//#include <ros2_esp32_interfaces/msg/detail/node_config__functions.h>
-//#include <ros2_esp32_interfaces/msg/detail/node_config__struct.h>
-//#include <ros2_esp32_interfaces/msg/detail/transport_config__functions.h>
-//#include <ros2_esp32_interfaces/msg/detail/transport_config__struct.h>
 #include <ros2_esp32_interfaces/msg/pin_values.h>
-//#include <ros2_esp32_interfaces/msg/pin_config.h>
 #include <ros2_esp32_interfaces/srv/set_config.h>
 #include <ros2_esp32_interfaces/srv/detail/set_config__functions.h>
 #include <rclc/executor.h>
