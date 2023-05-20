@@ -107,12 +107,6 @@ bool node_transport_init() {
     return board.transport_error == ESP_OK;
 }
 
-bool node_ping_agent() {
-    printf(">>> Ping agent\n");
-    return true;
-    return rmw_uros_ping_agent(1000, 3) == RMW_RET_OK;
-}
-
 bool node_init() {
     printf(">>> Init node\n");
 
@@ -125,8 +119,6 @@ bool node_init() {
     bool is_supp_init = false;
     bool is_timer_init = false;
 
-    usleep(1e6); // TODO: Remove
-
     printf(">>> Init options\n");
 	rcl_allocator_t allocator = rcl_get_default_allocator();
 
@@ -137,14 +129,12 @@ bool node_init() {
     printf(">>> Init RMW\n");
 	rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(&init_options);
 
-	//rmw_uros_discover_agent(rmw_options)
-	// Static Agent IP and port can be used instead of autodisvery.
 	OK_OR_CLEANUP(rmw_uros_options_set_udp_address(CONFIG_MICRO_ROS_AGENT_IP, CONFIG_MICRO_ROS_AGENT_PORT, rmw_options));
     
-	//while (rmw_uros_ping_agent(1000, 3) != RMW_RET_OK) {
-    //    printf(">>> Waiting for agent...\n");
-    //    usleep(3e6);
-    //}
+    // --- Wait for agent ---
+	while (rmw_uros_ping_agent_options(2000, 1, rmw_options) != RMW_RET_OK) {
+        printf(">>> Waiting for agent...\n");
+    }
 
     printf(">>> Init support\n");
 	OK_OR_CLEANUP(rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator));
@@ -239,17 +229,10 @@ bool node_init() {
     printf(">>> Run node\n");
     rmw_ret_t status = RMW_RET_OK;
     while (1) {
-        EXECUTE_EVERY_N_MS(2000, status = rmw_uros_ping_agent(100, 1););
-        //printf("error: %d\n", status);
+        EXECUTE_EVERY_N_MS(2000, status = rmw_uros_ping_agent_options(100, 1, rmw_options););
         if (status != RMW_RET_OK) goto cleanup;
-        rcl_ret_t err = rclc_executor_spin_some(&executor, 100);
-
-        //printf("error: %d\n", err);
-        //break;
-
-        //usleep(1000);
+        rclc_executor_spin_some(&executor, 100);
     }
-    //rclc_executor_spin(&executor);
 
 cleanup:
     printf(">>> Cleanup node\n");

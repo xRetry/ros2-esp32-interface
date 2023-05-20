@@ -3,7 +3,6 @@
 
 #include "board.h"
 
-bool node_ping_agent();
 bool node_init();
 bool node_transport_init();
 

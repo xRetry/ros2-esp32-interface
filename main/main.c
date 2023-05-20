@@ -48,11 +48,9 @@
 //
 //
 
-
 enum states {
     STATE_TRANSPORT_INIT,
-    STATE_PING,
-    STATE_NODE_INIT,
+    STATE_NODE_RUN,
 } state;
 
 void run_state_machine() {
@@ -61,15 +59,10 @@ void run_state_machine() {
     while (1) {
         switch (state) {
             case STATE_TRANSPORT_INIT:
-                state = node_transport_init() ? STATE_PING : STATE_TRANSPORT_INIT;
+                state = node_transport_init() ? STATE_NODE_RUN : STATE_TRANSPORT_INIT;
                 break;
-            case STATE_PING:
-                state = node_ping_agent() ? STATE_NODE_INIT : STATE_PING;
-                //state = STATE_NODE_INIT;
-                break;
-            case STATE_NODE_INIT:
+            case STATE_NODE_RUN:
                 node_init();
-                state = STATE_PING;
                 break;
             default:
                 state = STATE_TRANSPORT_INIT;
