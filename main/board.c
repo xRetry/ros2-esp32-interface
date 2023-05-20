@@ -7,15 +7,6 @@ pthread_rwlock_t _lock = PTHREAD_RWLOCK_INITIALIZER;
 void board_init() {
     printf("board_init\n");
 
-    board.agent_ip = strdup(CONFIG_MICRO_ROS_AGENT_IP);
-    board.agent_port = strdup(CONFIG_MICRO_ROS_AGENT_PORT);
-    board.node_name = strdup("esp32_interface");
-    board.subscriber_name = strdup("esp32_write_pins");
-    board.publisher_name = strdup("esp32_read_pins");
-    board.service_name = strdup("esp32_set_config");
-    board.use_wifi = true;
-    board.wifi_ssid = strdup("ssid");
-    board.wifi_pw = strdup("wifi_pw");
     board.refresh_rate_ms = 1000;
 
     for (int pin_nr=0; pin_nr<NUM_PINS; pin_nr++) {

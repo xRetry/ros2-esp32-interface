@@ -82,7 +82,6 @@ void run_state_machine() {
 }
 
 void app_main(void) {
-    xTaskCreate(run_state_machine, "uros_task", CONFIG_MICRO_ROS_APP_STACK, NULL, 
-        CONFIG_MICRO_ROS_APP_TASK_PRIO, NULL);
+    xTaskCreate(run_state_machine, "uros_task", 16000, NULL, 5, NULL);
     //test_board();
 }
