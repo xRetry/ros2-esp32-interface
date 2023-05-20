@@ -1,15 +1,33 @@
-menu "micro-ROS example-app settings"
-
-    config MICRO_ROS_APP_STACK
-        int "Stack the micro-ROS app (Bytes)"
-        default 16000
+menu "micro-ROS Node Settings"
+    
+    config MICRO_ROS_NODE_NAME
+        string "Name of the micro-ROS node"
+        default "esp32_interface"
         help
-        Stack size in Bytes of the micro-ROS app
+            The name of the micro-ROS node
 
-    config MICRO_ROS_APP_TASK_PRIO
-        int "Priority of the micro-ROS app"
-        default 5
+    config MICRO_ROS_NAMESPACE
+        string "Namespace of the micro-ROS Node"
+        default "esp32_interface"
         help
-        Priority of micro-ros task higher value means higher priority
-        
+            Use a specific namespace for the node to avoid topic collisions
+
+    config MICRO_ROS_SUBSCRIBER_NAME
+        string "Name of the micro-ROS subscriber"
+        default "/esp32_write_pins"
+        help
+            The name of the micro-ROS subscriber, which writes values to the pins
+
+    config MICRO_ROS_PUBLISHER_NAME
+        string "Name of the micro-ROS publisher"
+        default "/esp32_read_pins"
+        help
+            The name of the micro-ROS publisher, which reads the values of the pins
+
+    config MICRO_ROS_SERVICE_NAME
+        string "Name of the micro-ROS service"
+        default "/esp32_set_config"
+        help
+            The name of the micro-ROS service to change the pin configuration
+
 endmenu
