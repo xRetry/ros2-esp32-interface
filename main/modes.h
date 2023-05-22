@@ -34,7 +34,8 @@ typedef struct {
     uint32_t refresh_rate_ms;
     pin_mode_t pin_modes[NUM_PINS];
     esp_err_t (*pin_functions[NUM_PINS])(uint8_t, double*);
-    adc1_channel_t adc_handles[NUM_PINS];
+    int channels[NUM_PINS];
+    uint8_t adc_unit[NUM_PINS];
     pthread_rwlock_t lock;
     esp_err_t pin_errors[NUM_PINS];
     rcl_ret_t node_error;
@@ -42,7 +43,7 @@ typedef struct {
 } board_t;
 
 extern board_t board;
-extern const pin_mode_directions_t PIN_DIRECTIONS[5];
-extern esp_err_t (*const PIN_MODE_FUNCTIONS[5])(uint8_t);
+extern const pin_mode_directions_t PIN_DIRECTIONS[];
+extern esp_err_t (*const PIN_MODE_FUNCTIONS[])(uint8_t);
 
 #endif // MODES_H_
