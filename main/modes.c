@@ -55,7 +55,7 @@ esp_err_t read_pin_analog(uint8_t pin_nr, double *val) {
 }
 
 esp_err_t write_pin_analog(uint8_t pin_nr, double *val) {
-    dac_output_voltage(DAC_CHANNEL_1, *val);
+    dac_output_voltage(board.channels[pin_nr], *val);
     return ESP_OK;
 }
 
