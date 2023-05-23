@@ -77,10 +77,6 @@ void handle_set_config(const void *msg_req, void *msg_rsp) {
     set_config_req_t * request = (set_config_req_t *) msg_req;
     set_config_rsp_t * response = (set_config_rsp_t *) msg_rsp;
 
-    for (int i=0; i<NUM_PINS; i++) {
-        printf("pin: %d, mode: %d\n", i, request->pin_modes[i]);
-    }
-
     pthread_rwlock_wrlock(&board.lock);
 
     if (!request->read_only) { 
