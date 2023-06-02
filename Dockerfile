@@ -23,10 +23,11 @@ RUN useradd --create-home --home-dir /home/$USER_ID --shell /bin/bash --user-gro
 
 ARG USER_ID
 USER $USER_ID
+#USER root
 
 RUN git clone https://github.com/micro-ROS/micro_ros_espidf_component.git /opt/esp/idf/components/micro_ros_espidf_component
 
 # Set default location after container startup.
 WORKDIR /ws
 
-ENTRYPOINT ["idf.py", "build", "flash", "monitor"]
+#ENTRYPOINT ["idf.py", "build", "flash", "monitor"]
