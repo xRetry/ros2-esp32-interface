@@ -26,6 +26,7 @@ USER $USER_ID
 #USER root
 
 RUN git clone https://github.com/micro-ROS/micro_ros_espidf_component.git /opt/esp/idf/components/micro_ros_espidf_component
+RUN git clone https://github.com/xRetry/ros2-esp32-interfaces.git /opt/esp/idf/components/micro_ros_espidf_component/extra_packages/ros2-esp32-interfaces
 
 # Set default location after container startup.
 WORKDIR /ws
