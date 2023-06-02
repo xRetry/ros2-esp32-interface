@@ -2,28 +2,99 @@
 
 This program exposes the hardware components of an ESP32 microcontroller to the ROS2 Ecosystem.
 It allows a direct mapping from topic to pin, which can be dynamically configured at runtime.
-It is currently work-in-progress and far from finished.
 
 ## Feature List
 
-- [ ] Runtime configuration of:
-    - [x] Pin configuration
-    - [ ] UDP and serial connection 
-    - [ ] Sample rate
-    - [ ] ROS2 topics
+- [x] Runtime configuration of the boards pins
 - [x] Lightweight read and write operations
 - [x] Simple addtion of new read/write modes
-- [ ] Robust error handling
-- [ ] Configuration via file
-- [ ] Configuration persistence after reboot
+- [x] Robust error handling
+- [x] Configuration via file
 
 ## Overview
 
 This program is intended to be run on an ESP32 microcontroller.
-On the ROS2 side, an Micro-ROS Agent has to be running to make the Microcontroller visible to the ROS2 Ecosystem.
-The communiaton between Program and Agent is possible either via Wifi (UDP) or Serial connection (USB).
+On the ROS2 side, an Micro-ROS Agent has to be running to make the microcontroller visible to the ROS2 ecosystem.
+The communicaton between program and agent is done via Wifi (UDP).
 
 <img src="https://drive.google.com/uc?export=view&id=19eBBOYYDD7vcoYiBOruf9suX36mbpyZK" height="500">
+
+## Usage
+
+### Building from Source
+
+The only way to use the interface is to build it from source.
+This section describes the entire process for Ubuntu.
+Some parts may vary depending on the distribution.
+
+Fistly, the toolchain for ESP32 needs to be installed.
+This part follows the official instructions, which can be found [here](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-macos-setup.html)
+
+Install the required packages:
+
+    sudo apt-get install git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
+
+Clone the ESP-IDF repository:
+
+    mkdir -p ~/esp
+    cd ~/esp
+    git clone -b release/v4.4 --recursive https://github.com/espressif/esp-idf.git
+
+Install additional tools:
+
+    cd ~/esp/esp-idf
+    ./install.sh esp32
+
+Set up the environment variables:
+
+    . $HOME/esp/esp-idf/export.sh
+
+In the next part, the micro-ROS component for ESP-IDF needs to be set up.
+
+Install additional dependencies:
+
+    pip3 install catkin_pkg lark-parser empy colcon-common-extensions
+
+Clone the micro-ROS component for ESP-IDF repository:
+
+    git clone https://github.com/micro-ROS/micro_ros_espidf_component.git ~/esp/esp-idf/components/micro_ros_espidf_component
+
+Finally, this project can be cloned.
+
+Clone the GitHub repository:
+
+    cd ~/esp/esp-idf/components
+    git clone https://github.com/xRetry/ros2-esp32.git ~/esp/esp-idf/components/ros2-esp32
+    cd ros2-esp32
+
+To configure the compilation settings use:
+
+    idf.py menuconfig
+
+Then, to build the interface and flash it to the device use:
+
+    idf.py build flash
+
+If you also want to monitor the console output after flashing it the microcontroller, use:
+
+    idf.py build flash monitor
+
+### Building with Docker 
+
+To simplify this, the entire process can be done using Docker.
+
+Clone the GitHub repository:
+
+    git clone https://github.com/xRetry/ros2-esp32.git
+
+Build the docker image using the Dockerfile inside the respository:
+
+    cd ros2-esp32
+    docker build -t ros2-esp32 .
+
+Run the docker image:
+
+    docker run --rm -v .:/ws -v /dev:/dev --net=host ros2-esp32 /bin/bash -c "idf.py menuconfig build flash monitor"
 
 ## Program Structure
 
