@@ -11,9 +11,16 @@ ARG TZ_ARG=UTC
 ENV TZ=$TZ_ARG
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-RUN apt-get update -q && apt-get install -yq python3-pip
-RUN source $IDF_PATH/export.sh
-RUN pip3 install catkin_pkg lark-parser empy colcon-common-extensions importlib-resources
+COPY ./install_micro_ros_deps_script.sh /install_micro_ros_deps_script.sh
+
+RUN mkdir -p /tmp/install_micro_ros_deps_script && mv /install_micro_ros_deps_script.sh /tmp/install_micro_ros_deps_script/ && \
+
+    /tmp/install_micro_ros_deps_script/install_micro_ros_deps_script.sh && \
+    rm -rf /var/lib/apt/lists/*
+
+#RUN apt-get update -q && apt-get install -yq python3-pip
+#RUN source $IDF_PATH/export.sh
+#RUN pip3 install catkin_pkg lark-parser empy colcon-common-extensions importlib-resources
 	
 ARG USER_ID=espidf
 
@@ -30,5 +37,3 @@ RUN git clone https://github.com/xRetry/ros2-esp32-interfaces.git /opt/esp/idf/c
 
 # Set default location after container startup.
 WORKDIR /ws
-
-#ENTRYPOINT ["idf.py", "build", "flash", "monitor"]
