@@ -59,6 +59,10 @@ Clone the micro-ROS component for ESP-IDF repository:
 
     git clone https://github.com/micro-ROS/micro_ros_espidf_component.git ~/esp/esp-idf/components/micro_ros_espidf_component
 
+Next, the repository containting the ROS2 messsages need to cloned:
+
+    git clone https://github.com/xRetry/ros2-esp32-interfaces.git ~/esp/idf/components/extra_packages/ros2-esp32-interfaces
+
 Finally, this project can be cloned.
 
 Clone the GitHub repository:
