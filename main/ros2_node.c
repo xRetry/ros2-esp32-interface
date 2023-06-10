@@ -155,7 +155,7 @@ bool node_init() {
     OK_OR_CLEANUP(rclc_publisher_init_best_effort(
         &publisher,
         &node, 
-        ROSIDL_GET_MSG_TYPE_SUPPORT(ros2_esp32_interfaces, msg, PinValues),
+        ROSIDL_GET_MSG_TYPE_SUPPORT(ros2_esp32_messages, msg, PinValues),
         CONFIG_MICRO_ROS_PUBLISHER_NAME
     ));
     is_pub_init = true;
@@ -167,7 +167,7 @@ bool node_init() {
     OK_OR_CLEANUP(rclc_subscription_init_best_effort(
         &subscriber, 
         &node, 
-        ROSIDL_GET_MSG_TYPE_SUPPORT(ros2_esp32_interfaces, msg, PinValues),
+        ROSIDL_GET_MSG_TYPE_SUPPORT(ros2_esp32_messages, msg, PinValues),
         CONFIG_MICRO_ROS_SUBSCRIBER_NAME
     ));
     is_sub_init = true;
@@ -188,7 +188,7 @@ bool node_init() {
     OK_OR_CLEANUP(rclc_service_init_default(
         &service, 
         &node,
-        ROSIDL_GET_SRV_TYPE_SUPPORT(ros2_esp32_interfaces, srv, SetConfig), 
+        ROSIDL_GET_SRV_TYPE_SUPPORT(ros2_esp32_messages, srv, SetConfig), 
         CONFIG_MICRO_ROS_SERVICE_NAME
     ));
     is_service_init = true;

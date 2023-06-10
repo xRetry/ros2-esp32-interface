@@ -1,4 +1,5 @@
 #include "board.h"
+#include "modes.h"
 #include <string.h>
 
 board_t board;

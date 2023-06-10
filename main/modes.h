@@ -5,16 +5,15 @@
 #include "driver/adc.h"
 #include "esp_adc_cal.h"
 #include "driver/dac.h"
-#include <ros2_esp32_interfaces/msg/pin_values.h>
-#include <ros2_esp32_interfaces/srv/set_config.h>
-#include <ros2_esp32_interfaces/srv/detail/set_config__functions.h>
+#include <ros2_esp32_messages/msg/pin_values.h>
+#include <ros2_esp32_messages/srv/set_config.h>
 #include <rclc/executor.h>
 
 #define NUM_PINS 36
 
-typedef ros2_esp32_interfaces__srv__SetConfig_Request set_config_req_t;
-typedef ros2_esp32_interfaces__srv__SetConfig_Response set_config_rsp_t;
-typedef ros2_esp32_interfaces__msg__PinValues pin_values_t;
+typedef ros2_esp32_messages__srv__SetConfig_Request set_config_req_t;
+typedef ros2_esp32_messages__srv__SetConfig_Response set_config_rsp_t;
+typedef ros2_esp32_messages__msg__PinValues pin_values_t;
 
 typedef enum pin_mode_directions_t {
     DISABLED,

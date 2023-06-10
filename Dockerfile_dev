@@ -45,7 +45,7 @@ RUN curl https://raw.githubusercontent.com/xRetry/dev-env/main/setup_env.sh | sh
 RUN mkdir -p /ws
 
 # Project specific installs
-RUN git clone https://github.com/micro-ROS/micro_ros_espidf_component.git /opt/esp/idf/components/micro_ros_espidf_component
+RUN git clone -b humble https://github.com/micro-ROS/micro_ros_espidf_component.git /opt/esp/idf/components/micro_ros_espidf_component
 RUN gem install ceedling
 
 RUN echo "source /opt/esp/idf/export.sh" >> ~/.bashrc
