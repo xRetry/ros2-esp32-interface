@@ -11,15 +11,14 @@
 #include <timing.h>
 #include <uros_network_interfaces.h>
 #include <rmw_microros/rmw_microros.h>
-#include <unistd.h>
+//#include <unistd.h>
 
 #include "modes.h"
 #include "ros2_node.h"
 #include "sdkconfig.h"
 #include "stdbool.h"
-#include "tracetools/tracetools.h"
+//#include "tracetools/tracetools.h"
 
-#include <rcl/publisher.h>
 
 #define OK_OR_CLEANUP(fn) {\
     rcl_ret_t err = fn;\

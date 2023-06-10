@@ -139,4 +139,4 @@ const pin_mode_directions_t PIN_DIRECTIONS[] = {
     OUTPUT,
 };
 
-
+const size_t NUM_MODES = sizeof(PIN_DIRECTIONS) / sizeof(PIN_DIRECTIONS[0]);

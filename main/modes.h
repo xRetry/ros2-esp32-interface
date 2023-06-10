@@ -21,17 +21,17 @@ typedef enum pin_mode_directions_t {
     OUTPUT,
 } pin_mode_directions_t;
 
-typedef enum pin_mode_t {
-    MODE_DISABLED = 0,
-    MODE_DIGITAL_INPUT = 1,
-    MODE_DIGITAL_OUTPUT = 2,
-    MODE_ANALOG_INPUT = 3,
-    MODE_ANALOG_OUTPUT = 4,
-} pin_mode_t;
+//typedef enum pin_mode_t {
+//    MODE_DISABLED = 0,
+//    MODE_DIGITAL_INPUT = 1,
+//    MODE_DIGITAL_OUTPUT = 2,
+//    MODE_ANALOG_INPUT = 3,
+//    MODE_ANALOG_OUTPUT = 4,
+//} pin_mode_t;
 
 typedef struct {
     uint32_t refresh_rate_ms;
-    pin_mode_t pin_modes[NUM_PINS];
+    uint8_t pin_modes[NUM_PINS];
     esp_err_t (*pin_functions[NUM_PINS])(uint8_t, double*);
     int channels[NUM_PINS];
     uint8_t adc_unit[NUM_PINS];
@@ -42,6 +42,7 @@ typedef struct {
 } board_t;
 
 extern board_t board;
+extern const size_t NUM_MODES;
 extern const pin_mode_directions_t PIN_DIRECTIONS[];
 extern esp_err_t (*const PIN_MODE_FUNCTIONS[])(uint8_t);
 
