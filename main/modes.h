@@ -9,7 +9,7 @@
 #include <ros2_esp32_messages/srv/set_config.h>
 #include <rclc/executor.h>
 
-#define NUM_PINS 36
+#define NUM_PINS 40
 
 typedef ros2_esp32_messages__srv__SetConfig_Request set_config_req_t;
 typedef ros2_esp32_messages__srv__SetConfig_Response set_config_rsp_t;

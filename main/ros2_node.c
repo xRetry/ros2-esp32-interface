@@ -52,15 +52,12 @@ rcl_service_t service;
 rclc_support_t support;
 
 void handle_write_pins(const void *msgin) {
-    printf(">>> Write pins\n");
     const pin_values_t *msg = (const pin_values_t*) msgin;
 
     board_write(&msg->values);
 }
 
 void handle_read_pins(rcl_timer_t *timer, int64_t last_call_time) {
-    printf(">>> Read pins\n");
-
     (void)last_call_time;
 
     if (timer != NULL) {
@@ -91,8 +88,8 @@ void handle_set_config(const void *msg_req, void *msg_rsp) {
         response->pin_errors[i] = board.pin_errors[i];
     }
     for (int i=0; i<NUM_PINS; i++) {
-        printf("pin_nr: %d\nmode: %d\nerr: %d\n", 
-               i, response->pin_modes[i], response->pin_errors[i]);
+        printf("pin_nr: %d\nmode: %d\nerr: %d (%s)\n", 
+               i, response->pin_modes[i], response->pin_errors[i], esp_err_to_name(response->pin_errors[i]));
     }
 }
 
