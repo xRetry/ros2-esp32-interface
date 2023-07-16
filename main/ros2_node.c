@@ -205,7 +205,7 @@ bool node_init() {
 
     printf(">>> Init timer\n");
     rcl_timer_t timer  = rcl_get_zero_initialized_timer();
-    const unsigned int timer_timeout = board.refresh_rate_ms;
+    const unsigned int timer_timeout = CONFIG_MICRO_ROS_REFRESH_RATE_MS;
     OK_OR_CLEANUP(rclc_timer_init_default(
         &timer, 
         &support, 

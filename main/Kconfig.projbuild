@@ -30,4 +30,10 @@ menu "micro-ROS Node Settings"
         help
             The name of the micro-ROS service to change the pin configuration
 
+    config MICRO_ROS_REFRESH_RATE_MS
+        int "Refresh rate of the ROS2 node (in milliseconds)"
+        default 500
+        help
+            This number determines how often pin values are read/written
+
 endmenu
