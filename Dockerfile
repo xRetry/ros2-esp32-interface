@@ -4,8 +4,7 @@ SHELL ["/bin/bash", "-c"]
 ENV DEBIAN_FRONTEND noninteractive
 RUN echo "Set disable_coredump false" >> /etc/sudo.conf
 RUN apt-get update -q && \
-    apt-get install -yq sudo lsb-release gosu nano && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -yq sudo lsb-release gosu nano
 
 ARG TZ_ARG=UTC
 ENV TZ=$TZ_ARG
@@ -14,7 +13,6 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 COPY ./install_micro_ros_deps_script.sh /install_micro_ros_deps_script.sh
 
 RUN mkdir -p /tmp/install_micro_ros_deps_script && mv /install_micro_ros_deps_script.sh /tmp/install_micro_ros_deps_script/ && \
-
     /tmp/install_micro_ros_deps_script/install_micro_ros_deps_script.sh && \
     rm -rf /var/lib/apt/lists/*
 
