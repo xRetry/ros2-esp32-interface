@@ -14,64 +14,67 @@ It allows a direct mapping from topic to pin, which can be dynamically configure
 ## Overview
 
 This program is intended to be run on an ESP32 microcontroller.
-On the ROS2 side, an Micro-ROS Agent has to be running to make the microcontroller visible to the ROS2 ecosystem.
+On the ROS2 side, the Micro-ROS agent has to be running to make the microcontroller visible to the ROS2 ecosystem.
 The communicaton between program and agent is done via Wifi (UDP).
-
-<img src="https://drive.google.com/uc?export=view&id=19eBBOYYDD7vcoYiBOruf9suX36mbpyZK" height="500">
 
 ## Usage
 
 ### Building from Source
 
 The only way to use the interface is to build it from source.
-This section describes the entire process for Ubuntu.
-Some parts may vary depending on the distribution.
+This section describes the entire build process for Ubuntu.
+For other distributions, some steps may vary.
+
+#### Espressif IDF
 
 Fistly, the toolchain for ESP32 needs to be installed.
 This part follows the official instructions, which can be found [here](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-macos-setup.html)
 
-Install the required packages:
+To install the required system packages run the following terminal command:
 
     sudo apt-get install git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
 
-Clone the ESP-IDF repository:
+Then, clone the Espressif IDF repository:
 
     mkdir -p ~/esp
     cd ~/esp
     git clone -b release/v4.4 --recursive https://github.com/espressif/esp-idf.git
 
-Install additional tools:
+Run the following shell script to install additional tools:
 
     cd ~/esp/esp-idf
     ./install.sh esp32
 
-Set up the environment variables:
+Source the new environment variables:
 
     . $HOME/esp/esp-idf/export.sh
 
-In the next part, the micro-ROS component for ESP-IDF needs to be set up.
+#### Micro-ROS
 
-Install additional dependencies:
+In the next part, the micro-ROS component needs to be added.
+
+Install some required python packages:
 
     pip3 install catkin_pkg lark-parser empy colcon-common-extensions
 
-Clone the micro-ROS component for ESP-IDF repository:
+Clone the micro-ROS component repository:
 
-    git clone https://github.com/micro-ROS/micro_ros_espidf_component.git ~/esp/esp-idf/components/micro_ros_espidf_component
+    git clone -b humble https://github.com/micro-ROS/micro_ros_espidf_component.git ~/esp/esp-idf/components/micro_ros_espidf_component
 
-Next, the repository containting the ROS2 messsages need to cloned:
+Next, add the repository containting the required ROS2 messsages:
 
-    git clone https://github.com/xRetry/ros2-esp32-interfaces.git ~/esp/idf/components/extra_packages/ros2-esp32-interfaces
+    git clone https://github.com/xRetry/ros2-esp32-messages.git ~/esp/idf/components/extra_packages/ros2-esp32-messages
 
-Finally, this project can be cloned.
+#### ROS2-ESP32-Interface
+
+Finally, this project can be cloned and compiled.
 
 Clone the GitHub repository:
 
-    cd ~/esp/esp-idf/components
-    git clone https://github.com/xRetry/ros2-esp32.git ~/esp/esp-idf/components/ros2-esp32
-    cd ros2-esp32
+    git clone https://github.com/xRetry/ros2-esp32-interface.git
+    cd ros2-esp32-interface
 
-To configure the compilation settings use:
+To configure various settings for the compilation use:
 
     idf.py menuconfig
 
@@ -85,43 +88,40 @@ If you also want to monitor the console output after flashing it the microcontro
 
 ### Building with Docker 
 
-To simplify this, the entire process can be done using Docker.
+To simplify this process, everything can be done using Docker and the provided Dockerfile.
 
 Clone the GitHub repository:
 
-    git clone https://github.com/xRetry/ros2-esp32.git
+    git clone https://github.com/xRetry/ros2-esp32-interface.git
 
 Build the docker image using the Dockerfile inside the respository:
 
-    cd ros2-esp32
+    cd ros2-esp32-interface
     docker build -t ros2-esp32 .
 
-Run the docker image:
+Then, to run the docker image, use:
 
     docker run --rm -v .:/ws -v /dev:/dev --net=host ros2-esp32 /bin/bash -c "idf.py menuconfig build flash monitor"
 
-## Program Structure
 
-The program consists of two layers, one for running the ROS2 node and one for managing the hardware access.
+## Communication
 
-The ROS node is containing a publisher and subscriber for reading and writing to the pins of the microcrontroller, as well as a service for runtime configuration changes.
-
-The board layer is managing the access and state of the hardware components and exposes functions to read/write the values from the pins and change the board configuration.
-
-### Runtime Configuration
+### Pin Configuration
 
 When a new configuraion is received via the ROS service, depending on the mode number, the corresponding mode-activation function is called.
 The mode-activation function is responsible for correctly initializing the hardware and updating the board state.
 Specifically, it defines the direction of the mode (input or output) as well as adding the function pointer for the read/write function.
 
-### Reading and Writing
+### Reading and Writing Pin Values
 
 Reading and writing from and to the pins of the microcontroller is done at the refresh rate of the ROS node.
 A loop goes over all pins and calls the correct read/write function depending on the configured pin direction.
 
-## Adding new read/write modes
+## Development Notes
 
-So far, the program contains modes for reading and writing digital and analog signals.
+## Adding new pin modes
+
+In the current configuration, the program contains pin modes for reading and writing digital and analog signals.
 The functionality can be easily expanded thrugh the following steps:
 
 1. Provide a new function inside the `modes.c` file, which writes or reads the values of a specific pin. 
