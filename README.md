@@ -90,7 +90,7 @@ Build the docker image using the Dockerfile inside the respository:
 
 Then, to run the docker image, use:
 
-    docker run --rm -v .:/ws -v /dev:/dev --net=host --privileged ros2-esp32 /bin/bash -c "idf.py menuconfig build flash"
+    docker run --rm -it -v .:/ws -v /dev:/dev --net=host --privileged ros2-esp32 /bin/bash -c "idf.py menuconfig build flash"
 
 
 ## Communication
