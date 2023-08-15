@@ -2,27 +2,16 @@
 
 This program exposes the hardware components of an ESP32 microcontroller to the ROS2 Ecosystem.
 It allows a direct mapping from topic to pin, which can be dynamically configured at runtime.
-
-## Feature List
-
-- [x] Runtime configuration of the boards pins
-- [x] Lightweight read and write operations
-- [x] Simple addtion of new read/write modes
-- [x] Robust error handling
-- [x] Configuration via file
-
-## Overview
-
-This program is intended to be run on an ESP32 microcontroller.
-On the ROS2 side, the Micro-ROS agent has to be running to make the microcontroller visible to the ROS2 ecosystem.
-The communicaton between program and agent is done via Wifi (UDP).
+The program is intended to be run on an ESP-WROOM-32 microcontroller.
+On the ROS 2 side, a Micro-ROS agent has to be running to make the microcontroller visible to the ROS2 ecosystem.
+The communicaton between program and agent is done via Wi-Fi (UDP).
 
 ## Usage
 
 ### Building from Source
 
 The only way to use the interface is to build it from source.
-This section describes the entire build process for Ubuntu.
+This section describes the entire build process for Ubuntu 20.04.
 For other distributions, some steps may vary.
 
 #### Espressif IDF
@@ -32,13 +21,13 @@ This part follows the official instructions, which can be found [here](https://d
 
 To install the required system packages run the following terminal command:
 
-    sudo apt-get install git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
+    sudo apt update && apt install git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
 
 Then, clone the Espressif IDF repository:
 
     mkdir -p ~/esp
     cd ~/esp
-    git clone -b release/v4.4 --recursive https://github.com/espressif/esp-idf.git
+    git clone -b v4.4.5 --recursive https://github.com/espressif/esp-idf.git
 
 Run the following shell script to install additional tools:
 
@@ -51,19 +40,19 @@ Source the new environment variables:
 
 #### Micro-ROS
 
-In the next part, the micro-ROS component needs to be added.
+In the next part, the Micro-ROS component needs to be added.
 
-Install some required python packages:
+Install required python packages:
 
     pip3 install catkin_pkg lark-parser empy colcon-common-extensions
 
-Clone the micro-ROS component repository:
+Clone the Micro-ROS component repository:
 
     git clone -b humble https://github.com/micro-ROS/micro_ros_espidf_component.git ~/esp/esp-idf/components/micro_ros_espidf_component
 
 Next, add the repository containting the required ROS2 messsages:
 
-    git clone https://github.com/xRetry/ros2-esp32-messages.git ~/esp/idf/components/extra_packages/ros2-esp32-messages
+    git clone https://github.com/xRetry/ros2-esp32-messages.git ~/esp/esp-idf/components/micro_ros_espidf_component/extra_packages/ros2-esp32-messages
 
 #### ROS2-ESP32-Interface
 
@@ -101,7 +90,7 @@ Build the docker image using the Dockerfile inside the respository:
 
 Then, to run the docker image, use:
 
-    docker run --rm -v .:/ws -v /dev:/dev --net=host ros2-esp32 /bin/bash -c "idf.py menuconfig build flash monitor"
+    docker run --rm -v .:/ws -v /dev:/dev --net=host --privileged ros2-esp32 /bin/bash -c "idf.py menuconfig build flash"
 
 
 ## Communication
