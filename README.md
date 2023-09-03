@@ -1,16 +1,18 @@
-# Generic ROS2 Interface for ESP32
+# Generic ROS2 Interface for the ESP32 microcontroller
 
-This program exposes the hardware components of an ESP32 microcontroller to the ROS2 Ecosystem.
-It allows a direct mapping from topic to pin, which can be dynamically configured at runtime.
+This program exposes the GPIO pins of an ESP32 microcontroller to the ROS2 ecosystem.
+A ROS2 client can be used to read and write the values of the pins in real-time.
+This is done by mapping the pin values to ROS2 topics, which can be dynamically configured at runtime.
+
 The program is intended to be run on an ESP-WROOM-32 microcontroller.
-On the ROS 2 side, a Micro-ROS agent has to be running to make the microcontroller visible to the ROS2 ecosystem.
-The communicaton between program and agent is done via Wi-Fi (UDP).
+On the ROS2 side, a Micro-ROS agent has to be running to make the microcontroller visible to the ROS2 ecosystem.
+The communication between program and agent is done via Wi-Fi (UDP).
 
 ## Usage
 
 ### Building from Source
 
-The only way to use the interface is to build it from source.
+The interface does not come in a pre-compiled version, so it has to be build from source.
 This section describes the entire build process for Ubuntu 20.04.
 For other distributions, some steps may vary.
 
@@ -50,7 +52,7 @@ Clone the Micro-ROS component repository:
 
     git clone -b humble https://github.com/micro-ROS/micro_ros_espidf_component.git ~/esp/esp-idf/components/micro_ros_espidf_component
 
-Next, add the repository containting the required ROS2 messsages:
+Next, add the repository containing the required ROS2 messages:
 
     git clone https://github.com/xRetry/ros2-esp32-messages.git ~/esp/esp-idf/components/micro_ros_espidf_component/extra_packages/ros2-esp32-messages
 
@@ -83,7 +85,7 @@ Clone the GitHub repository:
 
     git clone https://github.com/xRetry/ros2-esp32-interface.git
 
-Build the docker image using the Dockerfile inside the respository:
+Build the docker image using the Dockerfile inside the repository:
 
     cd ros2-esp32-interface
     docker build -t ros2-esp32 .
@@ -95,68 +97,25 @@ Then, to run the docker image, use:
 
 ## Communication
 
-### Pin Configuration
+A ROS2 client is needed to interact with the ROS2-ESP32 Interface.
+The configuration of the pins is done using a ROS2 service.
+Alternatively, the [configuration tool](https://github.com/xRetry/esp32-config-tool) can be used.
+Furthermore, a ROS2 publisher is required to send pin values to the microcontroller and a ROS2 subscription to receive values.
+All message definitions can be found [here](https://github.com/xRetry/ros2-esp32-messages).
 
-When a new configuraion is received via the ROS service, depending on the mode number, the corresponding mode-activation function is called.
-The mode-activation function is responsible for correctly initializing the hardware and updating the board state.
-Specifically, it defines the direction of the mode (input or output) as well as adding the function pointer for the read/write function.
+### Changing the Pin Configuration
+
+When a new configuration is received via the ROS2 service, the currently active operating mode of a pin is changed based on the mode number in the service request.
+The request contains an array of mode numbers, where the array index corresponds to GPIO pin number of the microcontroller.
+The currently available pin operating modes are:
+
+0: Disabled: The pin is not used. Received values are ignored and published values set to zero.
+1: Digital Input: A pin is read as digital signal, with the value zero or one, and sent to other ROS2 clients.
+2: Digital Output: The values received by the microcontroller is written as digital signal to the pins.
+3: Analog Input: The program uses the ADC of the microcontroller to read the raw voltage and publishes the value.
+4: Analog Output: Received values are converted to an analog pin signal using the microcontrollers DAC.
 
 ### Reading and Writing Pin Values
 
-Reading and writing from and to the pins of the microcontroller is done at the refresh rate of the ROS node.
-A loop goes over all pins and calls the correct read/write function depending on the configured pin direction.
+During normal operation, the ROS2-ESP32 Interface performs the read and write operations at a frequency defined by the `MICRO_ROS_REFRESH_RATE`, which can be changed before compilation.
 
-## Development Notes
-
-## Adding new pin modes
-
-In the current configuration, the program contains pin modes for reading and writing digital and analog signals.
-The functionality can be easily expanded thrugh the following steps:
-
-1. Provide a new function inside the `modes.c` file, which writes or reads the values of a specific pin. 
-It is called at the refresh rate of the ROS node and should therefore be lightweight.
-From inside the function it is also possible to access the global `board` struct, which can be used to store handles or other stateful information.
-For concurrency safety, only read access to the struct is advised.
-
-2. Provide a function to activate the new mode inside the `modes.c` file. 
-It gets called whenever this mode is selected for a specific pin. 
-As with read/write function, it has access to the `board` struct but is also allowed to make mutable changes.
-
-3. Add the new mode to the `pin_mode_t` enum inside the `modes.h` file
-
-4. Add a pointer to the function which activates the new mode (from point 2) to the `PIN_MODE_FUNCTIONS` array inside `modes.c`
-
-5. Add the direction (Input or Output) to the `PIN_DIRECTIONS` array in `modes.c`
-
-## Configuration File
-
-The `esp32-config-tool` can be used to change the configuration of the board.
-It can be executed in the command line with the addition of a file path.
-    
-    esp32-config-tool config.yml
-
-The configuration file itself is formatted as YAML.
-This is what an example configuration looks like:
-
-    transport: 
-        type: udp
-        agent_ip: 127.0.0.1
-        agent_port: 0.0.0.0
-        wifi_ssid: abcd
-        wifi_password: 1234
-        
-    pins:
-      - number: 1
-        mode: analog_output
-      - number: 2
-        mode: digital_input
-
-    topics:
-        service: /esp32_service
-        publisher: /esp32_pub
-        subscriber: /esp32_sub
-        
-## Testing Framework
-
-Unit tests are implemented using the Ceedling framework by mocking hardware components.
-To run all tests, execute `ceedling test` in the command line.
